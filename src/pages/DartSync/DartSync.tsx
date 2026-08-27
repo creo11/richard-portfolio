@@ -32,13 +32,11 @@ function shufflePlayers(players: Player[]) {
 
 export default function DartSync() {
   const [step, setStep] = useState<DartSyncStep>("game-select");
-  const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [gamePlayers, setGamePlayers] = useState<Player[]>([]);
   const [game, setGame] = useState<DartSyncGame | null>(null);
   const [scoreHistory, setScoreHistory] = useState<ScoreAction[]>([]);
 
-  const handleGameSelect = (gameId: string) => {
-    setSelectedGame(gameId);
+  const handleGameSelect = (_gameId: string) => {
     setStep("player-select");
   };
 
