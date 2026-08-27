@@ -1,0 +1,282 @@
+.scoring {
+    min-height: 100vh;
+    padding: 24px;
+  
+    &__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 24px;
+  
+      h1 {
+        margin: 4px 0 0;
+      }
+    }
+  
+    &__header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+  
+    &__layout {
+      display: grid;
+      grid-template-columns: minmax(260px, 25%) 1fr;
+      gap: 32px;
+    }
+  
+    &__panel {
+      min-width: 0;
+    }
+  
+    &__dartboard {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 500px;
+    }
+  
+    &__next {
+      width: 100%;
+      margin-top: 20px;
+      padding: 14px;
+      cursor: pointer;
+    }
+  
+    &__waiting {
+      margin-top: 32px;
+  
+      h2 {
+        margin: 0 0 12px;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+    }
+  }
+  
+  .score-grid {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+  
+    &__numbers {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  
+  .score-target {
+    min-height: 100px;
+    border: 1px solid;
+    cursor: pointer;
+  
+    &__mark,
+    &__number {
+      display: block;
+    }
+  
+    &__mark {
+      min-height: 36px;
+      font-size: 30px;
+    }
+  
+    &__number {
+      font-size: 24px;
+      font-weight: 700;
+    }
+  
+    &--bull {
+      grid-column: 2;
+      grid-row: 1;
+    }
+  }
+  
+  .waiting-players {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .waiting-player {
+    padding: 12px;
+    border: 1px solid;
+    border-radius: 10px;
+  
+    &__header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+  
+    &__avatar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border: 1px solid;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+    }
+  
+    &__next {
+      display: block;
+      margin-top: 2px;
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+  }
+  
+  .cricket-marks {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  
+    &__target {
+      min-width: 0;
+      text-align: center;
+    }
+  
+    &__mark,
+    &__number {
+      display: block;
+    }
+  
+    &__mark {
+      min-height: 18px;
+      font-weight: 700;
+    }
+  
+    &__number {
+      font-size: 11px;
+    }
+  
+    &--compact {
+      font-size: 12px;
+    }
+  }
+  
+  .dartboard {
+    width: min(100%, 760px);
+    height: auto;
+    user-select: none;
+  
+    &__surround {
+      fill: #171717;
+      stroke: #555;
+      stroke-width: 3;
+    }
+  
+    &__segment,
+    &__ring {
+      stroke: #292929;
+      stroke-width: 1.5;
+      transition:
+        fill 180ms ease,
+        opacity 180ms ease;
+    }
+  
+    // Base muted board colors
+    &__segment--light {
+      fill: #b8b8b8;
+    }
+  
+    &__segment--dark {
+      fill: #242424;
+    }
+  
+    &__ring--light {
+      fill: #666;
+    }
+  
+    &__ring--dark {
+      fill: #454545;
+    }
+  
+    // Active Cricket target states
+    &__segment.dartboard__segment--three-left,
+    &__ring.dartboard__segment--three-left {
+      fill: #185b70;
+    }
+  
+    &__segment.dartboard__segment--two-left,
+    &__ring.dartboard__segment--two-left {
+      fill: #347c91;
+    }
+  
+    &__segment.dartboard__segment--one-left,
+    &__ring.dartboard__segment--one-left {
+      fill: #76a9b7;
+    }
+  
+    &__segment.dartboard__segment--closed,
+    &__ring.dartboard__segment--closed {
+      opacity: 0.32;
+    }
+  
+    &__wedge--interactive {
+      cursor: pointer;
+    }
+  
+    &__number {
+      fill: #aaa;
+      font-size: 22px;
+      font-weight: 600;
+      pointer-events: none;
+  
+      &--active {
+        fill: #fff;
+        font-weight: 800;
+      }
+    }
+  
+    &__bull {
+      stroke: #222;
+      stroke-width: 2;
+      cursor: pointer;
+      transition:
+        fill 180ms ease,
+        opacity 180ms ease;
+  
+      &--outer {
+        fill: #777;
+      }
+  
+      &--inner {
+        fill: #444;
+      }
+  
+      &.dartboard__segment--three-left {
+        fill: #185b70;
+      }
+  
+      &.dartboard__segment--two-left {
+        fill: #347c91;
+      }
+  
+      &.dartboard__segment--one-left {
+        fill: #76a9b7;
+      }
+  
+      &.dartboard__segment--closed {
+        fill: #444;
+        opacity: 0.32;
+        cursor: default;
+      }
+    }
+  }
+  
+  @media (max-width: 900px) {
+    .scoring {
+      &__layout {
+        grid-template-columns: 1fr;
+      }
+  
+      &__dartboard {
+        min-height: auto;
+      }
+    }
+  }
