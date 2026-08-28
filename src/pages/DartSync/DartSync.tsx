@@ -393,16 +393,6 @@ export default function DartSync() {
                     };
                 }
 
-                const opponentId =
-                    currentGame.showdownQueue.find(
-                        (playerId) => playerId !== currentPlayerId
-                    );
-
-                const opponent =
-                    currentGame.players.find(
-                        (player) => player.playerId === opponentId
-                    );
-
                 const currentQueueIndex =
                     currentGame.showdownQueue.indexOf(currentPlayerId);
 
