@@ -72,6 +72,7 @@ function CenterShape() {
 export default function ThreeBackground() {
   return (
     <div className="three-background">
+      <h1 className="home-title">rickgutz</h1>
       <Canvas camera={{ position: [0, 0, 8], fov: 75 }}>
 
         <ambientLight intensity={1} color="white" />
