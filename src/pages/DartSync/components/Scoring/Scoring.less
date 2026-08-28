@@ -14,6 +14,23 @@
         }
     }
 
+    &__dartboard {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 0;
+    }
+
+    &__dartboard-actions {
+        position: absolute;
+        top: 0;
+        right: 0;
+        display: flex;
+        gap: 12px;
+        z-index: 1;
+    }
+
     &__header-actions {
         display: flex;
         align-items: center;
@@ -22,12 +39,13 @@
 
     &__layout {
         display: grid;
-        grid-template-columns: minmax(260px, 25%) 1fr;
-        gap: 32px;
+        grid-template-columns: 25% 75%;
+        min-height: calc(100vh - 48px);
     }
 
     &__panel {
         min-width: 0;
+        padding-right: 32px;
     }
 
     &__dartboard {
@@ -52,6 +70,55 @@
             font-size: 14px;
             text-transform: uppercase;
             letter-spacing: 0.08em;
+        }
+    }
+
+    &__winner-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(0, 0, 0, 0.8);
+    }
+
+    &__winner {
+        width: min(100%, 440px);
+        padding: 48px 32px;
+        border-radius: 20px;
+        background: #222;
+        text-align: center;
+
+        h1 {
+            margin: 8px 0;
+            font-size: 48px;
+        }
+
+        p {
+            margin: 0 0 32px;
+        }
+
+        button {
+            padding: 14px 28px;
+            cursor: pointer;
+        }
+    }
+
+    &__winner-label {
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+    }
+
+    &__player-info {
+        margin-bottom: 24px;
+        text-align: left;
+
+        h1 {
+            margin: 8px 0 12px;
         }
     }
 }
@@ -214,7 +281,7 @@
 
     &__segment.dartboard__segment--closed,
     &__ring.dartboard__segment--closed {
-        opacity: 0.32;
+        opacity: 1;
     }
 
     &__wedge--interactive {
@@ -261,9 +328,8 @@
             fill: #76a9b7;
         }
 
-        &.dartboard__segment--closed {
-            fill: #444;
-            opacity: 0.32;
+        &--closed {
+            opacity: 0.45;
             cursor: default;
         }
     }

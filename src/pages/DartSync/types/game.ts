@@ -23,6 +23,10 @@ export type DartSyncGame = {
     players: PlayerGameState[];
     provisionalWinnerId?: string;
     winnerId?: string;
+    showdownLeaderId?: string;
+
+    comebackQueue: string[];
+    showdownQueue: string[];
 };
 
 export type ScoreAction = {

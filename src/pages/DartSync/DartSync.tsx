@@ -89,9 +89,32 @@ export default function DartSync() {
             const updatedPlayers = [...game.players];
             updatedPlayers[activePlayerIndex] = updatedPlayer;
 
+            const showdownLeader =
+                updatedPlayers
+                    .filter((player) =>
+                        game.showdownQueue.includes(player.playerId)
+                    )
+                    .reduce(
+                        (leader, player) =>
+                            !leader ||
+                                player.showdownBulls > leader.showdownBulls
+                                ? player
+                                : leader,
+                        undefined as typeof updatedPlayer | undefined
+                    );
+
             setGame({
                 ...game,
                 players: updatedPlayers,
+                showdownLeaderId:
+                    showdownLeader && updatedPlayers.filter((player) =>
+                        game.showdownQueue.includes(player.playerId)
+                    ).filter(
+                        (player) =>
+                            player.showdownBulls === showdownLeader.showdownBulls
+                    ).length === 1
+                        ? showdownLeader.playerId
+                        : undefined,
             });
 
             return;
@@ -134,37 +157,273 @@ export default function DartSync() {
         const updatedPlayers = [...game.players];
         updatedPlayers[activePlayerIndex] = completedPlayer;
 
+        /*
+         * If this is the first player to close,
+         * create the comeback queue starting
+         * with the next player in turn order.
+         */
+        const isFirstCloseOut =
+            justClosedOut && !game.provisionalWinnerId;
+
+        const comebackQueue = isFirstCloseOut
+            ? [
+                ...game.players.slice(activePlayerIndex + 1),
+                ...game.players.slice(0, activePlayerIndex),
+            ].map((player) => player.playerId)
+            : game.comebackQueue;
+
         setGame({
             ...game,
             players: updatedPlayers,
 
-            /*
-             * The first person to close becomes
-             * the provisional winner.
-             */
-            provisionalWinnerId:
-                justClosedOut && !game.provisionalWinnerId
-                    ? activePlayer.playerId
-                    : game.provisionalWinnerId,
+            provisionalWinnerId: isFirstCloseOut
+                ? activePlayer.playerId
+                : game.provisionalWinnerId,
 
-            phase:
-                justClosedOut && !game.provisionalWinnerId
-                    ? "comeback"
-                    : game.phase,
+            phase: isFirstCloseOut
+                ? "comeback"
+                : game.phase,
+
+            comebackQueue,
         });
     };
 
     const handleNextPlayer = () => {
         setScoreHistory([]);
+
         setGame((currentGame) => {
             if (!currentGame) return currentGame;
 
-            return {
-                ...currentGame,
-                activePlayerIndex:
-                    (currentGame.activePlayerIndex + 1) %
-                    currentGame.players.length,
-            };
+            /*
+             * Normal game rotation
+             */
+            if (currentGame.phase === "normal") {
+                return {
+                    ...currentGame,
+                    activePlayerIndex:
+                        (currentGame.activePlayerIndex + 1) %
+                        currentGame.players.length,
+                };
+            }
+
+            /*
+             * Comeback phase
+             */
+            if (currentGame.phase === "comeback") {
+                const activePlayer =
+                    currentGame.players[currentGame.activePlayerIndex];
+
+                const isProvisionalWinner =
+                    activePlayer.playerId ===
+                    currentGame.provisionalWinnerId;
+
+                /*
+                 * The provisional winner has finished
+                 * the turn in which they closed out.
+                 *
+                 * Start the first opponent's comeback turn.
+                 */
+                if (isProvisionalWinner) {
+                    const nextPlayerId =
+                        currentGame.comebackQueue[0];
+
+                    if (!nextPlayerId) {
+                        return currentGame;
+                    }
+
+                    const nextPlayerIndex =
+                        currentGame.players.findIndex(
+                            (player) =>
+                                player.playerId === nextPlayerId
+                        );
+
+                    return {
+                        ...currentGame,
+                        activePlayerIndex: nextPlayerIndex,
+                    };
+                }
+
+                /*
+                 * The active opponent just finished
+                 * their comeback turn.
+                 */
+                const remainingQueue =
+                    currentGame.comebackQueue.filter(
+                        (playerId) =>
+                            playerId !== activePlayer.playerId
+                    );
+
+                /*
+                 * There are still opponents waiting
+                 * for their comeback turn.
+                 */
+                if (remainingQueue.length > 0) {
+                    const nextPlayerId = remainingQueue[0];
+
+                    const nextPlayerIndex =
+                        currentGame.players.findIndex(
+                            (player) =>
+                                player.playerId === nextPlayerId
+                        );
+
+                    return {
+                        ...currentGame,
+                        comebackQueue: remainingQueue,
+                        activePlayerIndex: nextPlayerIndex,
+                    };
+                }
+
+                /*
+                 * All comeback turns are finished.
+                 */
+                const tiedPlayers =
+                    currentGame.players.filter(
+                        (player) =>
+                            player.playerId !==
+                            currentGame.provisionalWinnerId &&
+                            player.isClosedOut
+                    );
+
+                /*
+                 * Nobody managed to close.
+                 * The provisional winner wins.
+                 */
+                if (tiedPlayers.length === 0) {
+                    return {
+                        ...currentGame,
+                        comebackQueue: [],
+                        phase: "complete",
+                        winnerId:
+                            currentGame.provisionalWinnerId,
+                    };
+                }
+
+                /*
+                 * At least one opponent closed.
+                 * Move into the Bullseye Showdown.
+                 *
+                 * We'll build the actual showdown
+                 * rotation next.
+                 */
+                const provisionalWinnerIndex = currentGame.players.findIndex(
+                    (player) =>
+                        player.playerId ===
+                        currentGame.provisionalWinnerId
+                );
+
+                const showdownPlayers = currentGame.players.filter(
+                    (player) =>
+                        player.playerId === currentGame.provisionalWinnerId ||
+                        tiedPlayers.some(
+                            (tiedPlayer) => tiedPlayer.playerId === player.playerId
+                        )
+                );
+
+                const showdownLeader = showdownPlayers.reduce((leader, player) =>
+                    player.showdownBulls > leader.showdownBulls
+                        ? player
+                        : leader
+                );
+
+                return {
+                    ...currentGame,
+                    comebackQueue: [],
+                    showdownQueue: [
+                        currentGame.provisionalWinnerId!,
+                        ...tiedPlayers.map((player) => player.playerId),
+                    ],
+                    showdownLeaderId:
+                        showdownPlayers.filter(
+                            (player) =>
+                                player.showdownBulls === showdownLeader.showdownBulls
+                        ).length === 1
+                            ? showdownLeader.playerId
+                            : undefined,
+                    phase: "bullseye-showdown",
+                    activePlayerIndex: provisionalWinnerIndex,
+                };
+            }
+
+            if (currentGame.phase === "bullseye-showdown") {
+                const currentPlayerId =
+                    currentGame.players[currentGame.activePlayerIndex].playerId;
+
+                const currentPlayer =
+                    currentGame.players[currentGame.activePlayerIndex];
+
+                const otherShowdownPlayers =
+                    currentGame.players.filter(
+                        (player) =>
+                            currentGame.showdownQueue.includes(player.playerId) &&
+                            player.playerId !== currentPlayerId
+                    );
+
+                const highestOpponentScore = Math.max(
+                    ...otherShowdownPlayers.map(
+                        (player) => player.showdownBulls
+                    )
+                );
+
+                if (currentPlayer.showdownBulls < highestOpponentScore) {
+                    const remainingQueue =
+                        currentGame.showdownQueue.filter(
+                            (playerId) => playerId !== currentPlayerId
+                        );
+
+                    if (remainingQueue.length === 1) {
+                        return {
+                            ...currentGame,
+                            showdownQueue: remainingQueue,
+                            phase: "complete",
+                            winnerId: remainingQueue[0],
+                        };
+                    }
+
+                    const nextPlayerId = remainingQueue[0];
+
+                    const nextPlayerIndex =
+                        currentGame.players.findIndex(
+                            (player) => player.playerId === nextPlayerId
+                        );
+
+                    return {
+                        ...currentGame,
+                        showdownQueue: remainingQueue,
+                        activePlayerIndex: nextPlayerIndex,
+                    };
+                }
+
+                const opponentId =
+                    currentGame.showdownQueue.find(
+                        (playerId) => playerId !== currentPlayerId
+                    );
+
+                const opponent =
+                    currentGame.players.find(
+                        (player) => player.playerId === opponentId
+                    );
+
+                const currentQueueIndex =
+                    currentGame.showdownQueue.indexOf(currentPlayerId);
+
+                const nextQueueIndex =
+                    (currentQueueIndex + 1) % currentGame.showdownQueue.length;
+
+                const nextPlayerId =
+                    currentGame.showdownQueue[nextQueueIndex];
+
+                const nextPlayerIndex =
+                    currentGame.players.findIndex(
+                        (player) => player.playerId === nextPlayerId
+                    );
+
+                return {
+                    ...currentGame,
+                    activePlayerIndex: nextPlayerIndex,
+                };
+            }
+
+            return currentGame;
         });
     };
 
@@ -187,18 +446,31 @@ export default function DartSync() {
             if (lastAction.type === "showdown-bull") {
                 const updatedPlayer = {
                     ...player,
-                    showdownBulls: Math.max(
-                        0,
-                        player.showdownBulls - 1
-                    ),
+                    showdownBulls: Math.max(0, player.showdownBulls - 1),
                 };
 
                 const updatedPlayers = [...currentGame.players];
                 updatedPlayers[playerIndex] = updatedPlayer;
 
+                const showdownPlayers = updatedPlayers.filter((player) =>
+                    currentGame.showdownQueue.includes(player.playerId)
+                );
+
+                const highestScore = Math.max(
+                    ...showdownPlayers.map((player) => player.showdownBulls)
+                );
+
+                const leaders = showdownPlayers.filter(
+                    (player) => player.showdownBulls === highestScore
+                );
+
                 return {
                     ...currentGame,
                     players: updatedPlayers,
+                    showdownLeaderId:
+                        leaders.length === 1
+                            ? leaders[0].playerId
+                            : undefined,
                 };
             }
 
@@ -224,12 +496,18 @@ export default function DartSync() {
             return {
                 ...currentGame,
                 players: updatedPlayers,
+
                 provisionalWinnerId: wasProvisionalWinner
                     ? undefined
                     : currentGame.provisionalWinnerId,
+
                 phase: wasProvisionalWinner
                     ? "normal"
                     : currentGame.phase,
+
+                comebackQueue: wasProvisionalWinner
+                    ? []
+                    : currentGame.comebackQueue,
             };
         });
 
@@ -237,11 +515,13 @@ export default function DartSync() {
     };
 
     const handleEndGame = () => {
-        const confirmed = window.confirm(
-            "Are you sure you want to end this game?"
-        );
+        if (game?.phase !== "complete") {
+            const confirmed = window.confirm(
+                "Are you sure you want to end this game?"
+            );
 
-        if (!confirmed) return;
+            if (!confirmed) return;
+        }
 
         setScoreHistory([]);
         setGame(null);

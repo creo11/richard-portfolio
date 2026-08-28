@@ -41,49 +41,91 @@ export default function Scoring({
 }: ScoringProps) {
     const activeGamePlayer = game.players[game.activePlayerIndex];
 
-    const waitingGamePlayers = [
-        ...game.players.slice(game.activePlayerIndex + 1),
-        ...game.players.slice(0, game.activePlayerIndex),
-    ];
+    const waitingGamePlayers =
+        game.phase === "bullseye-showdown"
+            ? game.showdownQueue
+                .filter(
+                    (playerId) =>
+                        playerId !== activeGamePlayer.playerId
+                )
+                .map((playerId) =>
+                    game.players.find(
+                        (player) => player.playerId === playerId
+                    )
+                )
+                .filter(
+                    (player): player is (typeof game.players)[number] =>
+                        player !== undefined
+                )
+            : [
+                ...game.players.slice(game.activePlayerIndex + 1),
+                ...game.players.slice(0, game.activePlayerIndex),
+            ];
 
     const activePlayer = players.find(
         (player) => player.id === activeGamePlayer.playerId
     );
 
+    const winner = game.winnerId
+        ? players.find((player) => player.id === game.winnerId)
+        : undefined;
+
+    const showdownLeader = game.showdownLeaderId
+        ? players.find((player) => player.id === game.showdownLeaderId)
+        : undefined;
+
     return (
         <div className="scoring">
-            <header className="scoring__header">
-                <div>
-                    <span>House Rules Cricket</span>
-                    <h1>{activePlayer?.name}</h1>
-                    {activeGamePlayer.isClosedOut && (
-                        <>
-                            <div className="scoring__provisional">
-                                Closed Out
-                                {game.provisionalWinnerId === activeGamePlayer.playerId &&
-                                    " • Provisional Winner"}
-                            </div>
+            {game.phase === "complete" && winner && (
+                <div className="scoring__winner-overlay">
+                    <div className="scoring__winner">
+                        <span className="scoring__winner-label">
+                            Winner
+                        </span>
 
-                            <div className="scoring__showdown-score">
-                                Showdown Bulls: {activeGamePlayer.showdownBulls}
-                            </div>
-                        </>
-                    )}
+                        <h1>{winner.name}</h1>
+
+                        <p>House Rules Cricket Champion</p>
+
+                        <button
+                            type="button"
+                            onClick={onEndGame}
+                        >
+                            Finish Game
+                        </button>
+                    </div>
                 </div>
-                <div className="scoring__header-actions">
-                    <button type="button"
-                        onClick={onUndo}
-                        disabled={!canUndo}>Undo</button>
-                    <button type="button"
-                        className="scoring__end-game"
-                        onClick={onEndGame}>
-                        End Game
-                    </button>
-                </div>
-            </header>
+            )}
 
             <div className="scoring__layout">
                 <aside className="scoring__panel">
+                <div className="scoring__player-info">
+                        <span>
+                            {game.phase === "bullseye-showdown"
+                                ? "Bullseye Showdown"
+                                : "House Rules Cricket"}
+                        </span>
+                        <h1>{activePlayer?.name}</h1>
+                        {activeGamePlayer.showdownBulls > 0 && (
+                            <div className="scoring__showdown-score">
+                                Showdown Bulls: {activeGamePlayer.showdownBulls}
+                            </div>
+                        )}
+                        {game.phase === "bullseye-showdown" && (
+                            <div className="scoring__showdown-leader">
+                                Showdown Leader: {showdownLeader?.name ?? "Tied"}
+                            </div>
+                        )}
+                        {activeGamePlayer.isClosedOut && (
+                            <>
+                                <div className="scoring__provisional">
+                                    Closed Out
+                                    {game.provisionalWinnerId === activeGamePlayer.playerId &&
+                                        " • Provisional Winner"}
+                                </div>
+                            </>
+                        )}
+                    </div>
                     <div className="score-grid">
                         <div className="score-grid__numbers">
                             {TARGETS.slice(0, 3).map((target) => (
@@ -192,6 +234,23 @@ export default function Scoring({
                 </aside>
 
                 <main className="scoring__dartboard">
+                    <div className="scoring__dartboard-actions">
+                        <button
+                            type="button"
+                            onClick={onUndo}
+                            disabled={!canUndo}
+                        >
+                            Undo
+                        </button>
+
+                        <button
+                            type="button"
+                            className="scoring__end-game"
+                            onClick={onEndGame}
+                        >
+                            End Game
+                        </button>
+                    </div>
                     <DartBoard
                         player={activeGamePlayer}
                         onScoreTarget={onScoreTarget}
