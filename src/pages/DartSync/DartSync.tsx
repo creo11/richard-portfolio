@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import GameSelect from "./components/GameSelect/GameSelect";
 import PlayerSelect from "./components/PlayerSelect/PlayerSelect";
@@ -36,6 +36,41 @@ export default function DartSync() {
     const [gamePlayers, setGamePlayers] = useState<Player[]>([]);
     const [game, setGame] = useState<DartSyncGame | null>(null);
     const [scoreHistory, setScoreHistory] = useState<ScoreAction[]>([]);
+
+    useEffect(() => {
+        const existingFavicon = document.querySelector(
+            'link[rel="icon"]'
+        ) as HTMLLinkElement | null;
+
+        const originalHref = existingFavicon?.href;
+
+        let favicon = existingFavicon;
+
+        if (!favicon) {
+            favicon = document.createElement("link");
+            favicon.rel = "icon";
+            document.head.appendChild(favicon);
+        }
+
+        favicon.href = "/dartsync/favicon.svg";
+
+        const manifest = document.createElement("link");
+        manifest.rel = "manifest";
+        manifest.href = "/dartsync/site.webmanifest";
+        document.head.appendChild(manifest);
+
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("/dartsync/sw.js");
+        }
+
+        return () => {
+            if (originalHref) {
+                favicon!.href = originalHref;
+            }
+
+            manifest.remove();
+        };
+    }, []);
 
     const handleGameSelect = (_gameId: string) => {
         setStep("player-select");

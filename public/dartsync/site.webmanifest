@@ -1,0 +1,22 @@
+{
+  "id": "/dartsync",
+  "name": "DartSync",
+  "short_name": "DartSync",
+  "start_url": "/dartsync",
+  "scope": "/dartsync",
+  "display": "standalone",
+  "background_color": "#18191f",
+  "theme_color": "#18191f",
+  "icons": [
+    {
+      "src": "/dartsync/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/dartsync/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

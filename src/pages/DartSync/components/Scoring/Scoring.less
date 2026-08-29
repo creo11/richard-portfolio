@@ -1,17 +1,20 @@
 .scoring {
-    min-height: 100vh;
-    padding: 24px;
+    height: 100vh;
+    overflow: hidden;
 
-    &__header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 24px;
-        margin-bottom: 24px;
+    &__layout {
+        display: grid;
+        grid-template-columns: 33.333% 66.667%;
+        height: 100vh;
+    }
 
-        h1 {
-            margin: 4px 0 0;
-        }
+    &__panel {
+        box-sizing: border-box;
+        min-width: 0;
+        max-height: 100vh;
+        padding: 24px;
+        overflow-y: auto;
+        scrollbar-width: thin;
     }
 
     &__dartboard {
@@ -20,30 +23,10 @@
         align-items: center;
         justify-content: center;
         min-width: 0;
-    }
-
-    &__header-actions {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    &__layout {
-        display: grid;
-        grid-template-columns: 33.333% 66.667%;
-        min-height: calc(100vh - 48px);
-    }
-
-    &__panel {
-        min-width: 0;
-        padding-right: 32px;
-    }
-
-    &__dartboard {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 500px;
+        min-height: 0;
+        height: 100vh;
+        padding: 24px;
+        box-sizing: border-box;
     }
 
     &__next {
@@ -124,8 +107,8 @@
 
     &__dartboard-actions {
         position: absolute;
-        top: 0;
-        right: 0;
+        top: 24px;
+        right: 24px;
         display: flex;
         gap: 10px;
         z-index: 1;
@@ -144,13 +127,9 @@
             }
 
             &:disabled {
-                opacity: 0.35;
+                opacity: 0.25;
                 cursor: default;
             }
-        }
-
-        button:disabled {
-            opacity: 0.25;
         }
     }
 
@@ -161,6 +140,22 @@
         letter-spacing: 0.12em;
         text-transform: uppercase;
         opacity: 0.6;
+    }
+
+    &__provisional {
+        display: inline-block;
+        margin-top: 4px;
+        padding: 5px 9px;
+        border: 1px solid #555;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+    }
+
+    &__showdown-score {
+        margin-top: 4px;
+        font-size: 14px;
     }
 }
 
@@ -187,11 +182,38 @@
 
     &__mark {
         min-height: 36px;
+        padding: 10px;
         font-size: 30px;
+
+        svg {
+            fill: none;
+        }
+
+        &.score-target__mark--1 {
+            .state-1 {
+                fill: #fff;
+            }
+        }
+
+        &.score-target__mark--2 {
+
+            .state-1,
+            .state-2 {
+                fill: #fff;
+            }
+        }
+
+        &.score-target__mark--3 {
+
+            .state-1,
+            .state-2,
+            .state-3 {
+                fill: #fff;
+            }
+        }
     }
 
     &__number {
-        display: block;
         font-size: 22px;
         font-weight: 700;
         opacity: 0.65;
@@ -261,11 +283,39 @@
 
     &__mark {
         min-height: 18px;
+        padding: 10px;
         font-weight: 700;
+
+        svg {
+            fill: none;
+        }
+
+        &.cricket-marks__mark--1 {
+            .state-1 {
+                fill: #fff;
+            }
+        }
+
+        &.cricket-marks__mark--2 {
+
+            .state-1,
+            .state-2 {
+                fill: #fff;
+            }
+        }
+
+        &.cricket-marks__mark--3 {
+
+            .state-1,
+            .state-2,
+            .state-3 {
+                fill: #fff;
+            }
+        }
     }
 
     &__number {
-        font-size: 11px;
+        font-size: 15px;
     }
 
     &--compact {
@@ -296,6 +346,7 @@
     }
 
     // Base muted board colors
+
     &__segment--light {
         fill: #b8b8b8;
     }
@@ -313,6 +364,7 @@
     }
 
     // Active Cricket target states
+
     &__segment.dartboard__segment--three-left,
     &__ring.dartboard__segment--three-left {
         fill: #185b70;
@@ -335,6 +387,7 @@
 
     &__wedge--interactive {
         cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
     }
 
     &__number {
@@ -382,104 +435,33 @@
             cursor: default;
         }
     }
-
-    .dartboard__wedge--interactive {
-        -webkit-tap-highlight-color: transparent;
-    }
 }
 
 @media (max-width: 900px) {
     .scoring {
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
+
         &__layout {
             grid-template-columns: 1fr;
+            height: auto;
+            min-height: 100vh;
+        }
+
+        &__panel {
+            max-height: none;
+            overflow-y: visible;
         }
 
         &__dartboard {
+            height: auto;
             min-height: auto;
         }
     }
-}
 
-.scoring {
-    &__provisional {
-        display: inline-block;
-        margin-top: 4px;
-        padding: 5px 9px;
-        border: 1px solid #555;
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-    }
-
-    &__showdown-score {
-        margin-top: 4px;
-        font-size: 14px;
-    }
-}
-
-.score-target__mark {
-    padding: 10px;
-
-    svg {
-        fill: none;
-    }
-
-    &.score-target__mark--1 {
-        .state-1 {
-            fill: #fff
-        }
-    }
-
-    &.score-target__mark--2 {
-
-        .state-1,
-        .state-2 {
-            fill: #fff
-        }
-    }
-
-    &.score-target__mark--3 {
-
-        .state-1,
-        .state-2,
-        .state-3 {
-            fill: #fff
-        }
-    }
-}
-
-.cricket-marks__number {
-    font-size: 15px;
-}
-
-.cricket-marks__mark {
-    padding: 10px;
-
-    svg {
-        fill: none;
-    }
-
-    &.cricket-marks__mark--1 {
-        .state-1 {
-            fill: #fff
-        }
-    }
-
-    &.cricket-marks__mark--2 {
-
-        .state-1,
-        .state-2 {
-            fill: #fff
-        }
-    }
-
-    &.cricket-marks__mark--3 {
-
-        .state-1,
-        .state-2,
-        .state-3 {
-            fill: #fff
-        }
+    .dartboard {
+        height: auto;
+        max-height: none;
     }
 }
