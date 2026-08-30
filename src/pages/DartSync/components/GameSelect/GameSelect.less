@@ -1,12 +1,24 @@
 .game-select {
-  width: min(100%, 1180px);
-  margin: 0 auto;
-  padding: 36px 40px 64px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
   box-sizing: border-box;
+  overflow: hidden;
   text-align: left;
 
   &__header {
-    margin-bottom: 44px;
+    flex: 0 0 auto;
+    width: 100%;
+    background: var(--dartsync-bg);
+  }
+
+  &__header-inner {
+    width: min(100%, 1180px);
+    margin: 0 auto;
+    padding: 36px 40px 38px;
+    box-sizing: border-box;
   }
 
   &__brand {
@@ -37,7 +49,7 @@
   }
 
   &__intro {
-    margin-top: 52px;
+    margin-top: 38px;
 
     h1 {
       margin: 8px 0 12px;
@@ -62,8 +74,20 @@
   }
 
   &__games {
+    width: min(100%, 1180px);
+    margin: 0 auto;
+    padding: 6px 40px 64px;
+    box-sizing: border-box;
     display: grid;
     grid-template-columns: minmax(0, 760px);
+  }
+
+  &__body {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
   }
 
   &__card {
@@ -418,10 +442,8 @@
 
 @media (max-width: 680px) {
   .game-select {
-    padding: 24px 20px 40px;
-
-    &__header {
-      margin-bottom: 30px;
+    &__header-inner {
+      padding: 24px 20px 28px;
     }
 
     &__brand {
@@ -429,7 +451,11 @@
     }
 
     &__intro {
-      margin-top: 34px;
+      margin-top: 28px;
+    }
+
+    &__games {
+      padding: 4px 20px 40px;
     }
 
     &__card {

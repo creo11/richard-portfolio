@@ -56,58 +56,62 @@ export default function PlayerSelect({
   return (
     <div className="player-select">
       <header className="player-select__header">
-        <div className="player-select__topbar">
-          <div className="player-select__brand">
-            <span className="player-select__logo">
-              <img src="/dartsync/favicon.svg" alt="" />
-            </span>
-            <span>DartSync</span>
+        <div className="player-select__header-inner">
+          <div className="player-select__topbar">
+            <div className="player-select__brand">
+              <span className="player-select__logo">
+                <img src="/dartsync/favicon.svg" alt="" />
+              </span>
+              <span>DartSync</span>
+            </div>
+
+            <button className="player-select__back" type="button" onClick={onBack}>
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M16 10H5M9 6l-4 4 4 4" />
+              </svg>
+              Back to games
+            </button>
           </div>
 
-          <button className="player-select__back" type="button" onClick={onBack}>
-            <svg viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M16 10H5M9 6l-4 4 4 4" />
-            </svg>
-            Back to games
-          </button>
-        </div>
-
-        <div className="player-select__intro">
-          <span className="player-select__eyebrow">Game setup</span>
-          <h1>Select players</h1>
-          <p>Choose at least two players for Rick's House Rules Cricket.</p>
+          <div className="player-select__intro">
+            <span className="player-select__eyebrow">Game setup</span>
+            <h1>Select players</h1>
+            <p>Choose at least two players for Rick's House Rules Cricket.</p>
+          </div>
         </div>
       </header>
 
-      <div className="player-select__search">
-        <svg viewBox="0 0 20 20" aria-hidden="true">
-          <circle cx="9" cy="9" r="5.5" />
-          <path d="m13 13 3.5 3.5" />
-        </svg>
-
-        <input
-          type="search"
-          value={searchQuery}
-          placeholder="Search players"
-          aria-label="Search players"
-          onChange={(event) => setSearchQuery(event.target.value)}
-        />
-
-        {searchQuery && (
-          <button
-            type="button"
-            aria-label="Clear player search"
-            onClick={() => setSearchQuery("")}
-          >
+      <div className="player-select__body">
+        <div className="player-select__body-inner">
+          <div className="player-select__search">
             <svg viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M6 6l8 8M14 6l-8 8" />
+              <circle cx="9" cy="9" r="5.5" />
+              <path d="m13 13 3.5 3.5" />
             </svg>
-          </button>
-        )}
-      </div>
 
-      <div className="player-select__grid">
-        {filteredPlayers.map((player) => {
+            <input
+              type="search"
+              value={searchQuery}
+              placeholder="Search players"
+              aria-label="Search players"
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
+
+            {searchQuery && (
+              <button
+                type="button"
+                aria-label="Clear player search"
+                onClick={() => setSearchQuery("")}
+              >
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="M6 6l8 8M14 6l-8 8" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          <div className="player-select__grid">
+            {filteredPlayers.map((player) => {
           const isSelected = selectedPlayerIds.includes(player.id);
           const winRate =
             player.gamesPlayed > 0
@@ -168,52 +172,54 @@ export default function PlayerSelect({
               </div>
             </button>
           );
-        })}
+            })}
 
-        {filteredPlayers.length === 0 && (
-          <div className="player-select__empty">
-            <strong>No players found</strong>
-            <span>Try a different name or description.</span>
+            {filteredPlayers.length === 0 && (
+              <div className="player-select__empty">
+                <strong>No players found</strong>
+                <span>Try a different name or description.</span>
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      <div className="player-select__controls">
-        <div className="player-select__selection-summary">
-          <strong>{selectedPlayers.length}</strong>
-          <span>
-            {selectedPlayers.length === 1 ? "player selected" : "players selected"}
-          </span>
-        </div>
+          <div className="player-select__controls">
+            <div className="player-select__selection-summary">
+              <strong>{selectedPlayers.length}</strong>
+              <span>
+                {selectedPlayers.length === 1 ? "player selected" : "players selected"}
+              </span>
+            </div>
 
-        <div className="player-select__control-actions">
-          <label className="player-select__randomize">
-            <span className="player-select__switch">
-              <input
-                type="checkbox"
-                checked={randomizeOrder}
-                onChange={(event) => setRandomizeOrder(event.target.checked)}
-              />
-              <span aria-hidden="true" />
-            </span>
+            <div className="player-select__control-actions">
+              <label className="player-select__randomize">
+                <span className="player-select__switch">
+                  <input
+                    type="checkbox"
+                    checked={randomizeOrder}
+                    onChange={(event) => setRandomizeOrder(event.target.checked)}
+                  />
+                  <span aria-hidden="true" />
+                </span>
 
-            <span>
-              <strong>Randomize order</strong>
-              <small>Shuffle players before starting</small>
-            </span>
-          </label>
+                <span>
+                  <strong>Randomize order</strong>
+                  <small>Shuffle players before starting</small>
+                </span>
+              </label>
 
-          <button
-            className="player-select__start"
-            type="button"
-            disabled={selectedPlayers.length < 2}
-            onClick={() => onStartGame(selectedPlayers, randomizeOrder)}
-          >
-            Start game
-            <svg viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M4 10h11M11 6l4 4-4 4" />
-            </svg>
-          </button>
+              <button
+                className="player-select__start"
+                type="button"
+                disabled={selectedPlayers.length < 2}
+                onClick={() => onStartGame(selectedPlayers, randomizeOrder)}
+              >
+                Start game
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="M4 10h11M11 6l4 4-4 4" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

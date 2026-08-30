@@ -30,7 +30,11 @@ export default function CricketMarks({
         }`}
     >
       {TARGETS.map((target) => (
-        <div className="cricket-marks__target" key={target}>
+        <div
+          className="cricket-marks__target"
+          key={target}
+          aria-label={`${target === "bull" ? "Bull" : target}: ${player.marks[target]} of 3 marks`}
+        >
           <span
             className={`cricket-marks__mark cricket-marks__mark--${getMark(
               player.marks[target]
@@ -39,6 +43,7 @@ export default function CricketMarks({
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 256 256"
+              aria-hidden="true"
             >
               <path
                 className="state-3"

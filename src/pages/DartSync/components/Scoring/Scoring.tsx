@@ -132,7 +132,11 @@ export default function Scoring({
                                 <button
                                     key={target}
                                     type="button"
-                                    className="score-target"
+                                    className={`score-target ${activeGamePlayer.marks[target] >= 3
+                                        ? "score-target--closed"
+                                        : ""
+                                        }`}
+                                    aria-label={`${target}, ${activeGamePlayer.marks[target]} of 3 marks`}
                                     onClick={() => onScoreTarget(target)}
                                 >
                                     <span className={`score-target__mark score-target__mark--${getMark(activeGamePlayer.marks[target])}`}>
@@ -153,7 +157,11 @@ export default function Scoring({
                                 <button
                                     key={target}
                                     type="button"
-                                    className="score-target"
+                                    className={`score-target ${activeGamePlayer.marks[target] >= 3
+                                        ? "score-target--closed"
+                                        : ""
+                                        }`}
+                                    aria-label={`${target}, ${activeGamePlayer.marks[target]} of 3 marks`}
                                     onClick={() => onScoreTarget(target)}
                                 >
                                     <span className={`score-target__mark score-target__mark--${getMark(activeGamePlayer.marks[target])}`}>
@@ -173,7 +181,16 @@ export default function Scoring({
 
                         <button
                             type="button"
-                            className="score-target score-target--bull"
+                            className={`score-target score-target--bull ${activeGamePlayer.isClosedOut
+                                ? "score-target--showdown"
+                                : activeGamePlayer.marks.bull >= 3
+                                    ? "score-target--closed"
+                                    : ""
+                                }`}
+                            aria-label={activeGamePlayer.isClosedOut
+                                ? `Bull, ${activeGamePlayer.showdownBulls} showdown bulls`
+                                : `Bull, ${activeGamePlayer.marks.bull} of 3 marks`
+                            }
                             onClick={() => onScoreTarget("bull")}
                         >
                             <span className={`score-target__mark score-target__mark--${getMark(activeGamePlayer.marks.bull)}`}>
@@ -246,27 +263,40 @@ export default function Scoring({
                 </aside>
 
                 <main className="scoring__dartboard">
-                    <div className="scoring__dartboard-actions">
-                        <button
-                            type="button"
-                            onClick={onUndo}
-                            disabled={!canUndo}
-                        >
-                            Undo
-                        </button>
+                    <div className="scoring__dartboard-toolbar">
+                        <div className="scoring__dartboard-heading">
+                            <span aria-hidden="true" />
+                            <div>
+                                <strong>Live board</strong>
+                                <small>Tap Cricket targets to record marks</small>
+                            </div>
+                        </div>
 
-                        <button
-                            type="button"
-                            className="scoring__end-game"
-                            onClick={onEndGame}
-                        >
-                            End Game
-                        </button>
+                        <div className="scoring__dartboard-actions">
+                            <button
+                                type="button"
+                                onClick={onUndo}
+                                disabled={!canUndo}
+                            >
+                                Undo
+                            </button>
+
+                            <button
+                                type="button"
+                                className="scoring__end-game"
+                                onClick={onEndGame}
+                            >
+                                End Game
+                            </button>
+                        </div>
                     </div>
-                    <DartBoard
-                        player={activeGamePlayer}
-                        onScoreTarget={onScoreTarget}
-                    />
+
+                    <div className="scoring__dartboard-frame">
+                        <DartBoard
+                            player={activeGamePlayer}
+                            onScoreTarget={onScoreTarget}
+                        />
+                    </div>
                 </main>
             </div>
         </div>
