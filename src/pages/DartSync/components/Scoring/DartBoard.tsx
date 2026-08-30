@@ -280,12 +280,12 @@ export default function DartBoard({
                 className={[
                     "dartboard__bull",
                     "dartboard__bull--outer",
-                    player.marks.bull >= 3
+                    player.marks.bull >= 3 && !player.isClosedOut
                         ? "dartboard__bull--closed"
                         : getHighlightClass(player.marks.bull),
                 ].join(" ")}
                 onClick={() => {
-                    if (player.marks.bull < 3) {
+                    if (player.marks.bull < 3 || player.isClosedOut) {
                         onScoreTarget("bull");
                     }
                 }}
@@ -299,12 +299,12 @@ export default function DartBoard({
                 className={[
                     "dartboard__bull",
                     "dartboard__bull--inner",
-                    player.marks.bull >= 3
+                    player.marks.bull >= 3 && !player.isClosedOut
                         ? "dartboard__bull--closed"
                         : getHighlightClass(player.marks.bull),
                 ].join(" ")}
                 onClick={() => {
-                    if (player.marks.bull < 3) {
+                    if (player.marks.bull < 3 || player.isClosedOut) {
                         onScoreTarget("bull");
                     }
                 }}

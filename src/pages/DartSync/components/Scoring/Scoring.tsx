@@ -85,7 +85,7 @@ export default function Scoring({
 
                         <h1>{winner.name}</h1>
 
-                        <p>House Rules Cricket Champion</p>
+                        <p>Rick's House Rules Cricket Champion</p>
 
                         <button
                             type="button"
@@ -103,7 +103,7 @@ export default function Scoring({
                         <span className="scoring__game-label">
                             {game.phase === "bullseye-showdown"
                                 ? "Bullseye Showdown"
-                                : "House Rules Cricket"}
+                                : "Rick's House Rules Cricket"}
                         </span>
                         <h1>{activePlayer?.name}</h1>
                         {activeGamePlayer.showdownBulls > 0 && (

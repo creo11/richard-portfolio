@@ -23,6 +23,7 @@ export default function PlayerSelect({
 }: PlayerSelectProps) {
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
   const [randomizeOrder, setRandomizeOrder] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const selectedPlayers = useMemo(
     () =>
@@ -31,6 +32,18 @@ export default function PlayerSelect({
         .filter((player): player is Player => Boolean(player)),
     [selectedPlayerIds]
   );
+
+  const filteredPlayers = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    if (!normalizedQuery) return MOCK_PLAYERS;
+
+    return MOCK_PLAYERS.filter((player) =>
+      [player.name, player.description]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(normalizedQuery))
+    );
+  }, [searchQuery]);
 
   const togglePlayer = (playerId: string) => {
     setSelectedPlayerIds((current) =>
@@ -43,18 +56,58 @@ export default function PlayerSelect({
   return (
     <div className="player-select">
       <header className="player-select__header">
-        <div>
-          <h1>Select Players</h1>
-          <p>Choose at least two players for this game.</p>
+        <div className="player-select__topbar">
+          <div className="player-select__brand">
+            <span className="player-select__logo">
+              <img src="/dartsync/favicon.svg" alt="" />
+            </span>
+            <span>DartSync</span>
+          </div>
+
+          <button className="player-select__back" type="button" onClick={onBack}>
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M16 10H5M9 6l-4 4 4 4" />
+            </svg>
+            Back to games
+          </button>
         </div>
 
-        <button type="button" onClick={onBack}>
-          Back
-        </button>
+        <div className="player-select__intro">
+          <span className="player-select__eyebrow">Game setup</span>
+          <h1>Select players</h1>
+          <p>Choose at least two players for Rick's House Rules Cricket.</p>
+        </div>
       </header>
 
+      <div className="player-select__search">
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <circle cx="9" cy="9" r="5.5" />
+          <path d="m13 13 3.5 3.5" />
+        </svg>
+
+        <input
+          type="search"
+          value={searchQuery}
+          placeholder="Search players"
+          aria-label="Search players"
+          onChange={(event) => setSearchQuery(event.target.value)}
+        />
+
+        {searchQuery && (
+          <button
+            type="button"
+            aria-label="Clear player search"
+            onClick={() => setSearchQuery("")}
+          >
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M6 6l8 8M14 6l-8 8" />
+            </svg>
+          </button>
+        )}
+      </div>
+
       <div className="player-select__grid">
-        {MOCK_PLAYERS.map((player) => {
+        {filteredPlayers.map((player) => {
           const isSelected = selectedPlayerIds.includes(player.id);
           const winRate =
             player.gamesPlayed > 0
@@ -68,14 +121,27 @@ export default function PlayerSelect({
               className={`player-card ${
                 isSelected ? "player-card--selected" : ""
               }`}
+              aria-pressed={isSelected}
               onClick={() => togglePlayer(player.id)}
             >
               {player.lastWinner && (
                 <span className="player-card__badge">Last Winner</span>
               )}
 
-              <div className="player-card__avatar">
-                {getInitials(player.name)}
+              <div className="player-card__top">
+                <div className="player-card__avatar">
+                  {getInitials(player.name)}
+                </div>
+
+                <span className="player-card__check" aria-hidden="true">
+                  {isSelected ? (
+                    <svg viewBox="0 0 20 20">
+                      <path d="m5 10 3 3 7-7" />
+                    </svg>
+                  ) : (
+                    <span />
+                  )}
+                </span>
               </div>
 
               <div className="player-card__content">
@@ -86,42 +152,69 @@ export default function PlayerSelect({
                 <div className="player-card__stats">
                   <span>
                     <strong>{player.wins}</strong>
-                    Wins
+                    <small>Wins</small>
                   </span>
 
                   <span>
                     <strong>{player.gamesPlayed}</strong>
-                    Games
+                    <small>Games</small>
                   </span>
 
                   <span>
                     <strong>{winRate}%</strong>
-                    Win Rate
+                    <small>Win rate</small>
                   </span>
                 </div>
               </div>
             </button>
           );
         })}
+
+        {filteredPlayers.length === 0 && (
+          <div className="player-select__empty">
+            <strong>No players found</strong>
+            <span>Try a different name or description.</span>
+          </div>
+        )}
       </div>
 
       <div className="player-select__controls">
-        <label>
-          <input
-            type="checkbox"
-            checked={randomizeOrder}
-            onChange={(event) => setRandomizeOrder(event.target.checked)}
-          />
-          Randomize player order
-        </label>
+        <div className="player-select__selection-summary">
+          <strong>{selectedPlayers.length}</strong>
+          <span>
+            {selectedPlayers.length === 1 ? "player selected" : "players selected"}
+          </span>
+        </div>
 
-        <button
-          type="button"
-          disabled={selectedPlayers.length < 2}
-          onClick={() => onStartGame(selectedPlayers, randomizeOrder)}
-        >
-          Start Game
-        </button>
+        <div className="player-select__control-actions">
+          <label className="player-select__randomize">
+            <span className="player-select__switch">
+              <input
+                type="checkbox"
+                checked={randomizeOrder}
+                onChange={(event) => setRandomizeOrder(event.target.checked)}
+              />
+              <span aria-hidden="true" />
+            </span>
+
+            <span>
+              <strong>Randomize order</strong>
+              <small>Shuffle players before starting</small>
+            </span>
+          </label>
+
+          <button
+            className="player-select__start"
+            type="button"
+            disabled={selectedPlayers.length < 2}
+            onClick={() => onStartGame(selectedPlayers, randomizeOrder)}
+          >
+            Start game
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M4 10h11M11 6l4 4-4 4" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -414,7 +414,13 @@ export default function DartSync() {
                         };
                     }
 
-                    const nextPlayerId = remainingQueue[0];
+                    const eliminatedPlayerQueueIndex =
+                        currentGame.showdownQueue.indexOf(currentPlayerId);
+
+                    const nextPlayerId =
+                        remainingQueue[
+                            eliminatedPlayerQueueIndex % remainingQueue.length
+                        ];
 
                     const nextPlayerIndex =
                         currentGame.players.findIndex(
