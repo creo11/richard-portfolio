@@ -678,15 +678,15 @@
             fill: #454545;
         }
 
-        &.dartboard__segment--three-left {
+        &--three-left {
             fill: #185b70;
         }
 
-        &.dartboard__segment--two-left {
+        &--two-left {
             fill: #347c91;
         }
 
-        &.dartboard__segment--one-left {
+        &--one-left {
             fill: #76a9b7;
         }
 
@@ -701,17 +701,50 @@
     .scoring {
         height: auto;
         min-height: 100vh;
+        min-height: 100dvh;
         overflow: visible;
 
         &__layout {
             grid-template-columns: 1fr;
             height: auto;
             min-height: 100vh;
+            min-height: 100dvh;
         }
 
         &__panel {
             max-height: none;
+            padding: 18px 16px 22px;
             overflow-y: visible;
+            border-right: 0;
+            border-bottom: 1px solid var(--dartsync-border);
+        }
+
+        &__player-info {
+            margin-bottom: 16px;
+
+            h1 {
+                margin: 6px 0 10px;
+                font-size: clamp(30px, 8vw, 38px);
+            }
+        }
+
+        &__game-label {
+            font-size: 10px;
+        }
+
+        &__next {
+            position: sticky;
+            bottom: 12px;
+            z-index: 20;
+            min-height: 50px;
+            margin-top: 14px;
+            box-shadow:
+                0 0 0 6px var(--dartsync-panel),
+                0 12px 28px rgba(0, 0, 0, 0.38);
+        }
+
+        &__waiting {
+            margin-top: 26px;
         }
 
         &__dartboard {
@@ -721,9 +754,48 @@
         }
 
         &__dartboard-frame {
-            min-height: min(720px, 92vw);
+            min-height: min(720px, calc(100vw - 32px));
             padding: 12px;
         }
+    }
+
+    .score-grid {
+        margin-top: 14px;
+        gap: 6px;
+
+        &__numbers {
+            gap: 6px;
+        }
+    }
+
+    .score-target {
+        min-height: 84px;
+        padding: 8px 6px 10px;
+
+        &__mark {
+            width: 32px;
+            min-height: 32px;
+            margin-bottom: 6px;
+        }
+
+        &__number {
+            font-size: 16px;
+        }
+    }
+
+    .waiting-players {
+        flex-direction: row;
+        gap: 10px;
+        padding: 1px 1px 8px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x proximity;
+        scrollbar-width: thin;
+    }
+
+    .waiting-player {
+        flex: 0 0 min(82vw, 340px);
+        scroll-snap-align: start;
     }
 
     .dartboard {
@@ -734,6 +806,10 @@
 
 @media (max-width: 560px) {
     .scoring {
+        &__panel {
+            padding-inline: 12px;
+        }
+
         &__dartboard-toolbar {
             align-items: flex-start;
             flex-direction: column;
@@ -751,5 +827,120 @@
         &__dartboard-frame {
             min-height: calc(100vw - 32px);
         }
+    }
+
+    .score-target {
+        min-height: 78px;
+
+        &__mark {
+            width: 29px;
+            min-height: 29px;
+        }
+    }
+
+    .waiting-player {
+        flex-basis: min(86vw, 330px);
+    }
+}
+
+@media (max-width: 900px) and (orientation: landscape) and (max-height: 600px) {
+    .scoring {
+        height: 100vh;
+        height: 100dvh;
+        min-height: 0;
+        overflow: hidden;
+
+        &__layout {
+            grid-template-columns: 42% 58%;
+            height: 100vh;
+            height: 100dvh;
+            min-height: 0;
+        }
+
+        &__panel {
+            max-height: 100vh;
+            max-height: 100dvh;
+            padding: 14px;
+            overflow-y: auto;
+            border-right: 1px solid var(--dartsync-border);
+            border-bottom: 0;
+        }
+
+        &__player-info {
+            margin-bottom: 10px;
+
+            h1 {
+                margin-block: 4px 7px;
+                font-size: 28px;
+            }
+        }
+
+        &__next {
+            position: static;
+            min-height: 44px;
+            box-shadow: none;
+        }
+
+        &__waiting {
+            margin-top: 20px;
+        }
+
+        &__dartboard {
+            height: 100vh;
+            height: 100dvh;
+            padding: 12px;
+        }
+
+        &__dartboard-toolbar {
+            align-items: center;
+            flex-direction: row;
+            gap: 12px;
+        }
+
+        &__dartboard-heading small {
+            display: none;
+        }
+
+        &__dartboard-actions {
+            width: auto;
+
+            button {
+                min-height: 36px;
+                padding-inline: 11px;
+            }
+        }
+
+        &__dartboard-frame {
+            min-height: 0;
+            padding: 8px;
+        }
+    }
+
+    .score-target {
+        min-height: 68px;
+
+        &__mark {
+            width: 24px;
+            min-height: 24px;
+            margin-bottom: 3px;
+        }
+
+        &__number {
+            font-size: 14px;
+        }
+    }
+
+    .waiting-players {
+        flex-direction: column;
+        overflow-x: visible;
+    }
+
+    .waiting-player {
+        flex-basis: auto;
+    }
+
+    .dartboard {
+        height: 100%;
+        max-height: 100%;
     }
 }

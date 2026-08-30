@@ -82,6 +82,13 @@ function getHighlightClass(markCount: number) {
     return "dartboard__segment--three-left";
 }
 
+function getBullHighlightClass(markCount: number) {
+    if (markCount >= 3) return "";
+    if (markCount === 2) return "dartboard__bull--one-left";
+    if (markCount === 1) return "dartboard__bull--two-left";
+    return "dartboard__bull--three-left";
+}
+
 export default function DartBoard({
     player,
     onScoreTarget,
@@ -282,7 +289,7 @@ export default function DartBoard({
                     "dartboard__bull--outer",
                     player.marks.bull >= 3 && !player.isClosedOut
                         ? "dartboard__bull--closed"
-                        : getHighlightClass(player.marks.bull),
+                        : getBullHighlightClass(player.marks.bull),
                 ].join(" ")}
                 onClick={() => {
                     if (player.marks.bull < 3 || player.isClosedOut) {
@@ -301,7 +308,7 @@ export default function DartBoard({
                     "dartboard__bull--inner",
                     player.marks.bull >= 3 && !player.isClosedOut
                         ? "dartboard__bull--closed"
-                        : getHighlightClass(player.marks.bull),
+                        : getBullHighlightClass(player.marks.bull),
                 ].join(" ")}
                 onClick={() => {
                     if (player.marks.bull < 3 || player.isClosedOut) {
