@@ -592,6 +592,39 @@ export default function DartSync() {
         ]);
     };
 
+    const handleUpdatePlayer = (
+        playerId: string,
+        name: string,
+        description?: string
+    ) => {
+        setPlayers((currentPlayers) =>
+            currentPlayers.map((player) =>
+                player.id === playerId
+                    ? { ...player, name, description }
+                    : player
+            )
+        );
+    };
+
+    const handleResetPlayerStats = (playerId: string) => {
+        setPlayers((currentPlayers) =>
+            currentPlayers.map((player) =>
+                player.id === playerId
+                    ? { ...player, wins: 0, gamesPlayed: 0 }
+                    : player
+            )
+        );
+    };
+
+    const handleDeletePlayer = (playerId: string) => {
+        setPlayers((currentPlayers) =>
+            currentPlayers.filter((player) => player.id !== playerId)
+        );
+        setSelectedPlayerIds((currentIds) =>
+            currentIds.filter((id) => id !== playerId)
+        );
+    };
+
     return (
         <div className="dartsync-app">
             {step === "game-select" && (
@@ -603,6 +636,9 @@ export default function DartSync() {
                     players={players}
                     onBack={() => setStep("player-select")}
                     onCreatePlayer={handleCreatePlayer}
+                    onUpdatePlayer={handleUpdatePlayer}
+                    onResetPlayerStats={handleResetPlayerStats}
+                    onDeletePlayer={handleDeletePlayer}
                 />
             )}
 

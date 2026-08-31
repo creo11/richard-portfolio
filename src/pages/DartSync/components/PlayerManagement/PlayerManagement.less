@@ -202,12 +202,26 @@
       background: #1b1c28;
       color: var(--dartsync-text-muted);
       font-size: 11px;
-      opacity: 0.48;
-      cursor: not-allowed;
+      cursor: pointer;
+
+      &:hover:not(:disabled) {
+        border-color: #45485d;
+        color: var(--dartsync-text);
+      }
+
+      &:disabled {
+        opacity: 0.48;
+        cursor: not-allowed;
+      }
     }
   }
 
-  &__delete { margin-left: auto; color: #ff9aa8 !important; }
+  &__delete {
+    margin-left: auto;
+    color: #ff9aa8 !important;
+
+    &:hover { border-color: rgba(224, 75, 96, 0.5) !important; }
+  }
 }
 
 .player-form-modal {
@@ -326,6 +340,85 @@
   }
 }
 
+.player-confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(5, 6, 11, 0.84);
+  backdrop-filter: blur(7px);
+
+  &__dialog {
+    box-sizing: border-box;
+    width: min(100%, 420px);
+    padding: 28px;
+    border: 1px solid var(--dartsync-border);
+    border-radius: 14px;
+    background: var(--dartsync-panel);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+
+    h2 {
+      margin: 8px 0 10px;
+      color: var(--dartsync-text);
+      font-size: 24px;
+      letter-spacing: -0.025em;
+    }
+
+    p {
+      margin: 0;
+      color: var(--dartsync-text-muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+  }
+
+  &__eyebrow {
+    color: #f4c36a;
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+
+    &--danger { color: #ff9aa8; }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 26px;
+
+    button {
+      padding: 11px 16px;
+      border: 1px solid var(--dartsync-border);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--dartsync-text-muted);
+      font-weight: 700;
+      cursor: pointer;
+
+      &:focus-visible {
+        outline: 3px solid rgba(41, 182, 216, 0.28);
+        outline-offset: 2px;
+      }
+    }
+
+    .player-confirm-modal__confirm {
+      border-color: rgba(244, 195, 106, 0.48);
+      background: rgba(244, 195, 106, 0.12);
+      color: #f4c36a;
+
+      &--danger {
+        border-color: rgba(224, 75, 96, 0.5);
+        background: rgba(224, 75, 96, 0.12);
+        color: #ff9aa8;
+      }
+    }
+  }
+}
+
 @media (max-width: 900px) {
   .player-management__grid { grid-template-columns: 1fr; }
 }
@@ -349,5 +442,10 @@
     &__dialog header,
     &__fields { padding-inline: 20px; }
     &__dialog footer { padding: 15px 20px; }
+  }
+
+  .player-confirm-modal {
+    align-items: end;
+    padding: 12px;
   }
 }

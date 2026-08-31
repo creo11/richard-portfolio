@@ -87,6 +87,161 @@ describe("DartSync scoring flow", () => {
     expect(screen.getByRole("button", { name: /Casey/ })).toBeInTheDocument();
   });
 
+  it("edits player details while preserving identity, selection, and statistics", async () => {
+    const user = userEvent.setup();
+
+    render(<DartSync />);
+
+    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(screen.getByRole("button", { name: /Rick/ }));
+    await user.click(screen.getByRole("button", { name: "Manage players" }));
+
+    await user.click(
+      within(screen.getByLabelText("Rick actions")).getByRole("button", {
+        name: "Edit",
+      })
+    );
+
+    let dialog = screen.getByRole("dialog", { name: "Update player details" });
+    const nameInput = within(dialog).getByRole("textbox", { name: "Player name" });
+    const descriptionInput = within(dialog).getByRole("textbox", { name: /Description/ });
+
+    expect(nameInput).toHaveValue("Rick");
+    expect(descriptionInput).toHaveValue("Aggressive closer");
+
+    await user.clear(nameInput);
+    await user.type(nameInput, "Enrique");
+    await user.click(within(dialog).getByRole("button", { name: "Save changes" }));
+    expect(screen.getByRole("alert")).toHaveTextContent(/already exists/i);
+
+    await user.clear(nameInput);
+    await user.type(nameInput, "Rick James");
+    await user.clear(descriptionInput);
+    await user.type(descriptionInput, "Aggressive finisher");
+    await user.click(within(dialog).getByRole("button", { name: "Save changes" }));
+
+    const updatedHeading = screen.getByRole("heading", {
+      level: 2,
+      name: "Rick James",
+    });
+    const updatedCard = updatedHeading.closest("article");
+    expect(updatedCard).not.toBeNull();
+    expect(within(updatedCard!).getByText("Aggressive finisher")).toBeInTheDocument();
+    expect(within(updatedCard!).getByText("18")).toBeInTheDocument();
+    expect(within(updatedCard!).getByText("32")).toBeInTheDocument();
+
+    await user.click(
+      within(screen.getByLabelText("Rick James actions")).getByRole("button", {
+        name: "Edit",
+      })
+    );
+    dialog = screen.getByRole("dialog", { name: "Update player details" });
+    await user.clear(within(dialog).getByRole("textbox", { name: "Player name" }));
+    await user.type(
+      within(dialog).getByRole("textbox", { name: "Player name" }),
+      "Not saved"
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(screen.getByRole("heading", { level: 2, name: "Rick James" })).toBeInTheDocument();
+    expect(screen.queryByText("Not saved")).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Back to player selection" })
+    );
+    expect(screen.getByRole("button", { name: /Rick James/ })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+  });
+
+  it("resets player statistics without removing the player or selection", async () => {
+    const user = userEvent.setup();
+
+    render(<DartSync />);
+
+    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(screen.getByRole("button", { name: /Rick/ }));
+    await user.click(screen.getByRole("button", { name: "Manage players" }));
+
+    const rickActions = screen.getByLabelText("Rick actions");
+    await user.click(within(rickActions).getByRole("button", { name: "Reset stats" }));
+
+    let dialog = screen.getByRole("dialog", { name: "Reset Rick's stats?" });
+    expect(within(dialog).getByText(/player will remain available/i)).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+
+    const originalCard = screen.getByRole("heading", { level: 2, name: "Rick" }).closest("article");
+    expect(originalCard).not.toBeNull();
+    expect(within(originalCard!).getByText("18")).toBeInTheDocument();
+    expect(within(originalCard!).getByText("32")).toBeInTheDocument();
+
+    await user.click(
+      within(screen.getByLabelText("Rick actions")).getByRole("button", {
+        name: "Reset stats",
+      })
+    );
+    dialog = screen.getByRole("dialog", { name: "Reset Rick's stats?" });
+    await user.click(within(dialog).getByRole("button", { name: "Reset stats" }));
+
+    const resetCard = screen.getByRole("heading", { level: 2, name: "Rick" }).closest("article");
+    expect(resetCard).not.toBeNull();
+    expect(within(resetCard!).getAllByText("0")).toHaveLength(2);
+    expect(within(resetCard!).getByText("0%")).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Back to player selection" })
+    );
+    expect(screen.getByRole("button", { name: /Rick/ })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+  });
+
+  it("deletes a player from the active list and current selection", async () => {
+    const user = userEvent.setup();
+
+    render(<DartSync />);
+
+    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(screen.getByRole("button", { name: /Rick/ }));
+    await user.click(screen.getByRole("button", { name: /Jaie/ }));
+    await user.click(screen.getByRole("button", { name: "Manage players" }));
+
+    await user.click(
+      within(screen.getByLabelText("Rick actions")).getByRole("button", {
+        name: "Delete",
+      })
+    );
+
+    let dialog = screen.getByRole("dialog", { name: "Delete Rick?" });
+    expect(within(dialog).getByText(/persistent game history/i)).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(screen.getByRole("heading", { level: 2, name: "Rick" })).toBeInTheDocument();
+
+    await user.click(
+      within(screen.getByLabelText("Rick actions")).getByRole("button", {
+        name: "Delete",
+      })
+    );
+    dialog = screen.getByRole("dialog", { name: "Delete Rick?" });
+    await user.click(
+      within(dialog).getByRole("button", { name: "Delete player" })
+    );
+
+    expect(screen.getByLabelText("2 active players")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2, name: "Rick" })).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Back to player selection" })
+    );
+    expect(screen.queryByRole("button", { name: /Rick/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Jaie/ })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(screen.getByRole("button", { name: "Start game" })).toBeDisabled();
+  });
+
   it("starts a two-player game, records a mark, and undoes it", async () => {
     const user = userEvent.setup();
 

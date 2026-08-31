@@ -7,6 +7,9 @@ type PlayerManagementProps = {
   players: Player[];
   onBack: () => void;
   onCreatePlayer: (name: string, description?: string) => void;
+  onUpdatePlayer: (playerId: string, name: string, description?: string) => void;
+  onResetPlayerStats: (playerId: string) => void;
+  onDeletePlayer: (playerId: string) => void;
 };
 
 function getInitials(name: string) {
@@ -22,30 +25,69 @@ export default function PlayerManagement({
   players,
   onBack,
   onCreatePlayer,
+  onUpdatePlayer,
+  onResetPlayerStats,
+  onDeletePlayer,
 }: PlayerManagementProps) {
-  const [createOpen, setCreateOpen] = useState(false);
+  const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
+  const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
+  const [resetPlayerId, setResetPlayerId] = useState<string | null>(null);
+  const [deletePlayerId, setDeletePlayerId] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const resetPlayer = players.find((player) => player.id === resetPlayerId);
+  const deletePlayer = players.find((player) => player.id === deletePlayerId);
 
   useEffect(() => {
-    if (!createOpen) return;
+    if (!formMode) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setCreateOpen(false);
+      if (event.key === "Escape") setFormMode(null);
     };
 
     document.addEventListener("keydown", handleKeyDown);
     nameInputRef.current?.focus();
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [createOpen]);
+  }, [formMode]);
+
+  useEffect(() => {
+    if (!resetPlayerId) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setResetPlayerId(null);
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [resetPlayerId]);
+
+  useEffect(() => {
+    if (!deletePlayerId) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDeletePlayerId(null);
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [deletePlayerId]);
 
   const openCreatePlayer = () => {
     setName("");
     setDescription("");
     setError("");
-    setCreateOpen(true);
+    setEditingPlayerId(null);
+    setFormMode("create");
+  };
+
+  const openEditPlayer = (player: Player) => {
+    setName(player.name);
+    setDescription(player.description ?? "");
+    setError("");
+    setEditingPlayerId(player.id);
+    setFormMode("edit");
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -58,13 +100,22 @@ export default function PlayerManagement({
       return;
     }
 
-    if (players.some((player) => player.name.toLowerCase() === trimmedName.toLowerCase())) {
+    if (players.some(
+      (player) =>
+        player.id !== editingPlayerId &&
+        player.name.toLowerCase() === trimmedName.toLowerCase()
+    )) {
       setError("A player with this name already exists.");
       return;
     }
 
-    onCreatePlayer(trimmedName, trimmedDescription || undefined);
-    setCreateOpen(false);
+    if (formMode === "edit" && editingPlayerId) {
+      onUpdatePlayer(editingPlayerId, trimmedName, trimmedDescription || undefined);
+    } else {
+      onCreatePlayer(trimmedName, trimmedDescription || undefined);
+    }
+
+    setFormMode(null);
   };
 
   return (
@@ -141,9 +192,17 @@ export default function PlayerManagement({
                   </div>
 
                   <div className="managed-player__actions" aria-label={`${player.name} actions`}>
-                    <button type="button" disabled>Edit</button>
-                    <button type="button" disabled>Reset stats</button>
-                    <button type="button" disabled className="managed-player__delete">Delete</button>
+                    <button type="button" onClick={() => openEditPlayer(player)}>Edit</button>
+                    <button type="button" onClick={() => setResetPlayerId(player.id)}>
+                      Reset stats
+                    </button>
+                    <button
+                      type="button"
+                      className="managed-player__delete"
+                      onClick={() => setDeletePlayerId(player.id)}
+                    >
+                      Delete
+                    </button>
                   </div>
                 </article>
               );
@@ -152,19 +211,25 @@ export default function PlayerManagement({
         </div>
       </main>
 
-      {createOpen && (
+      {formMode && (
         <div className="player-form-modal" role="presentation">
           <form
             className="player-form-modal__dialog"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="create-player-title"
+            aria-labelledby="player-form-title"
             onSubmit={handleSubmit}
           >
             <header>
-              <span>Create player</span>
-              <h2 id="create-player-title">Add a new player</h2>
-              <p>They will be available immediately during game setup.</p>
+              <span>{formMode === "edit" ? "Edit player" : "Create player"}</span>
+              <h2 id="player-form-title">
+                {formMode === "edit" ? "Update player details" : "Add a new player"}
+              </h2>
+              <p>
+                {formMode === "edit"
+                  ? "Statistics and game identity will remain unchanged."
+                  : "They will be available immediately during game setup."}
+              </p>
             </header>
 
             <div className="player-form-modal__fields">
@@ -175,7 +240,7 @@ export default function PlayerManagement({
                   value={name}
                   maxLength={40}
                   aria-invalid={Boolean(error)}
-                  aria-describedby={error ? "create-player-error" : undefined}
+                  aria-describedby={error ? "player-form-error" : undefined}
                   onChange={(event) => {
                     setName(event.target.value);
                     setError("");
@@ -194,17 +259,90 @@ export default function PlayerManagement({
               </label>
 
               {error && (
-                <p id="create-player-error" className="player-form-modal__error" role="alert">
+                <p id="player-form-error" className="player-form-modal__error" role="alert">
                   {error}
                 </p>
               )}
             </div>
 
             <footer>
-              <button type="button" onClick={() => setCreateOpen(false)}>Cancel</button>
-              <button type="submit" className="player-form-modal__submit">Create player</button>
+              <button type="button" onClick={() => setFormMode(null)}>Cancel</button>
+              <button type="submit" className="player-form-modal__submit">
+                {formMode === "edit" ? "Save changes" : "Create player"}
+              </button>
             </footer>
           </form>
+        </div>
+      )}
+
+      {resetPlayer && (
+        <div className="player-confirm-modal" role="presentation">
+          <section
+            className="player-confirm-modal__dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reset-player-title"
+            aria-describedby="reset-player-description"
+          >
+            <span className="player-confirm-modal__eyebrow">Reset statistics</span>
+            <h2 id="reset-player-title">Reset {resetPlayer.name}'s stats?</h2>
+            <p id="reset-player-description">
+              Wins and games played will return to zero. The player will remain available.
+            </p>
+
+            <div className="player-confirm-modal__actions">
+              <button type="button" autoFocus onClick={() => setResetPlayerId(null)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="player-confirm-modal__confirm"
+                onClick={() => {
+                  onResetPlayerStats(resetPlayer.id);
+                  setResetPlayerId(null);
+                }}
+              >
+                Reset stats
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {deletePlayer && (
+        <div className="player-confirm-modal" role="presentation">
+          <section
+            className="player-confirm-modal__dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-player-title"
+            aria-describedby="delete-player-description"
+          >
+            <span className="player-confirm-modal__eyebrow player-confirm-modal__eyebrow--danger">
+              Delete player
+            </span>
+            <h2 id="delete-player-title">Delete {deletePlayer.name}?</h2>
+            <p id="delete-player-description">
+              This removes the player from the active list and current game setup.
+              Future persistent game history will retain its own player records.
+            </p>
+
+            <div className="player-confirm-modal__actions">
+              <button type="button" autoFocus onClick={() => setDeletePlayerId(null)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="player-confirm-modal__confirm player-confirm-modal__confirm--danger"
+                onClick={() => {
+                  onDeletePlayer(deletePlayer.id);
+                  setDeletePlayerId(null);
+                }}
+              >
+                Delete player
+              </button>
+            </div>
+          </section>
         </div>
       )}
     </div>
