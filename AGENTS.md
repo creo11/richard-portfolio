@@ -56,6 +56,25 @@ The application currently has three primary UI stages:
 2. Select Players
 3. Scoring
 
+## Game Engine Architecture
+
+Game metadata and engine selection are registered in:
+
+`src/pages/DartSync/games/registry.ts`
+
+House Rules Cricket state transitions live in its dedicated pure engine:
+
+`src/pages/DartSync/games/houseRules/engine.ts`
+
+The engine owns game creation, scoring, turn advancement, and undo. The main
+`DartSync` component coordinates React state and delegates those transitions to
+the selected registered engine. Keep new game-specific rules out of the page
+component; add them through a dedicated engine and registry entry.
+
+The current scoring presentation is still House Rules-specific. A future game
+that needs a different scoreboard should register or select its own scoring
+view rather than adding unrelated rules to the existing `Scoring` component.
+
 ---
 
 # House Rules Cricket
