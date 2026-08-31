@@ -45,6 +45,8 @@ export type GameDefinition<TGame, TTarget, TAction, TOptions> = {
     id: string;
     name: string;
     description: string;
+    image: string;
+    imageAlt: string;
     engine: GameEngine<TGame, TTarget, TAction, TOptions>;
     ScoringView: ComponentType<GameScoringViewProps<TGame, TTarget>>;
     RulesView: ComponentType<GameRulesViewProps>;
@@ -55,6 +57,8 @@ export type RegisteredGame = {
     id: string;
     name: string;
     description: string;
+    image: string;
+    imageAlt: string;
     engine: GameEngine<unknown, DartboardTarget, unknown, GameSetupOptions>;
     ScoringView: ComponentType<GameScoringViewProps<unknown, DartboardTarget>>;
     RulesView: ComponentType<GameRulesViewProps>;

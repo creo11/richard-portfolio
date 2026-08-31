@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { GameRulesViewProps } from "../types";
 
-export default function AroundTheClockRules({ onClose }: GameRulesViewProps) {
+export default function AroundTheWorldRules({ onClose }: GameRulesViewProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -19,12 +19,12 @@ export default function AroundTheClockRules({ onClose }: GameRulesViewProps) {
         className="rules-modal__dialog"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="around-clock-rules-title"
+        aria-labelledby="around-world-rules-title"
       >
         <header className="rules-modal__header">
           <div>
             <span className="rules-modal__eyebrow">How to play</span>
-            <h2 id="around-clock-rules-title">Around the Clock</h2>
+            <h2 id="around-world-rules-title">Around the World</h2>
           </div>
           <button
             ref={closeButtonRef}

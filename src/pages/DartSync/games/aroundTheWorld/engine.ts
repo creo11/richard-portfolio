@@ -1,22 +1,22 @@
 import type { Player } from "../../types/player";
 import type { GameEngine, ScoreResult } from "../types";
 import {
-    AROUND_THE_CLOCK_TARGETS,
+    AROUND_THE_WORLD_TARGETS,
 } from "./types";
 import type {
-    AroundTheClockAction,
-    AroundTheClockGame,
-    AroundTheClockOptions,
-    AroundTheClockTarget,
+    AroundTheWorldAction,
+    AroundTheWorldGame,
+    AroundTheWorldOptions,
+    AroundTheWorldTarget,
 } from "./types";
 
 function createGame(
     players: Player[],
-    options: AroundTheClockOptions
-): AroundTheClockGame {
+    options: AroundTheWorldOptions
+): AroundTheWorldGame {
     return {
         id: crypto.randomUUID(),
-        gameType: "around-the-clock",
+        gameType: "around-the-world",
         phase: "active",
         activePlayerIndex: 0,
         players: players.map((player) => ({
@@ -28,17 +28,17 @@ function createGame(
 }
 
 function scoreTarget(
-    game: AroundTheClockGame,
-    target: AroundTheClockTarget,
+    game: AroundTheWorldGame,
+    target: AroundTheWorldTarget,
     multiplier: number
-): ScoreResult<AroundTheClockGame, AroundTheClockAction> {
+): ScoreResult<AroundTheWorldGame, AroundTheWorldAction> {
     if (game.phase === "complete") return { game };
 
     const player = game.players[game.activePlayerIndex];
-    const requiredTarget = AROUND_THE_CLOCK_TARGETS[player.targetIndex];
+    const requiredTarget = AROUND_THE_WORLD_TARGETS[player.targetIndex];
     if (target !== requiredTarget) return { game };
 
-    const action: AroundTheClockAction = {
+    const action: AroundTheWorldAction = {
         playerId: player.playerId,
         type: "advance",
         previousTargetIndex: player.targetIndex,
@@ -47,7 +47,7 @@ function scoreTarget(
         ? Math.max(1, Math.min(3, multiplier))
         : 1;
     const nextTargetIndex = Math.min(
-        AROUND_THE_CLOCK_TARGETS.length,
+        AROUND_THE_WORLD_TARGETS.length,
         player.targetIndex + advancement
     );
     const updatedPlayers = [...game.players];
@@ -55,7 +55,7 @@ function scoreTarget(
         ...player,
         targetIndex: nextTargetIndex,
     };
-    const completed = nextTargetIndex >= AROUND_THE_CLOCK_TARGETS.length;
+    const completed = nextTargetIndex >= AROUND_THE_WORLD_TARGETS.length;
 
     return {
         action,
@@ -68,7 +68,7 @@ function scoreTarget(
     };
 }
 
-function nextPlayer(game: AroundTheClockGame): AroundTheClockGame {
+function nextPlayer(game: AroundTheWorldGame): AroundTheWorldGame {
     if (game.phase === "complete") return game;
 
     return {
@@ -79,9 +79,9 @@ function nextPlayer(game: AroundTheClockGame): AroundTheClockGame {
 }
 
 function undo(
-    game: AroundTheClockGame,
-    action: AroundTheClockAction
-): AroundTheClockGame {
+    game: AroundTheWorldGame,
+    action: AroundTheWorldAction
+): AroundTheWorldGame {
     const playerIndex = game.players.findIndex(
         (player) => player.playerId === action.playerId
     );
@@ -102,11 +102,11 @@ function undo(
     };
 }
 
-export const aroundTheClockEngine: GameEngine<
-    AroundTheClockGame,
-    AroundTheClockTarget,
-    AroundTheClockAction,
-    AroundTheClockOptions
+export const aroundTheWorldEngine: GameEngine<
+    AroundTheWorldGame,
+    AroundTheWorldTarget,
+    AroundTheWorldAction,
+    AroundTheWorldOptions
 > = {
     createGame,
     scoreTarget,

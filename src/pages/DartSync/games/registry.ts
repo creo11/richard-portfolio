@@ -1,7 +1,9 @@
 import Scoring from "../components/Scoring/Scoring";
-import AroundTheClockRules from "./aroundTheClock/AroundTheClockRules";
-import AroundTheClockScoring from "./aroundTheClock/AroundTheClockScoring";
-import { aroundTheClockEngine } from "./aroundTheClock/engine";
+import aroundTheWorldImage from "../../../assets/dartSync/game-images/around-the-world.webp";
+import houseCricketImage from "../../../assets/dartSync/game-images/house-cricket.webp";
+import AroundTheWorldRules from "./aroundTheWorld/AroundTheWorldRules";
+import AroundTheWorldScoring from "./aroundTheWorld/AroundTheWorldScoring";
+import { aroundTheWorldEngine } from "./aroundTheWorld/engine";
 import HouseRulesRules from "./houseRules/HouseRulesRules";
 import { houseRulesEngine } from "./houseRules/engine";
 import { defineGame } from "./types";
@@ -12,18 +14,22 @@ export const GAME_REGISTRY = {
         name: "Rick's House Rules Cricket",
         description:
             "Close 15–20 and Bull. First player to close out wins, with a chance for opponents to force a bullseye showdown.",
+        image: houseCricketImage,
+        imageAlt: "Rick's House Rules dartboard artwork",
         engine: houseRulesEngine,
         ScoringView: Scoring,
         RulesView: HouseRulesRules,
     }),
-    "around-the-clock": defineGame({
-        id: "around-the-clock",
-        name: "Around the Clock",
+    "around-the-world": defineGame({
+        id: "around-the-world",
+        name: "Around the World",
         description:
             "Race from 1 through 20 and finish on Bull. Only your current target counts.",
-        engine: aroundTheClockEngine,
-        ScoringView: AroundTheClockScoring,
-        RulesView: AroundTheClockRules,
+        image: aroundTheWorldImage,
+        imageAlt: "Earth viewed from space",
+        engine: aroundTheWorldEngine,
+        ScoringView: AroundTheWorldScoring,
+        RulesView: AroundTheWorldRules,
         options: [
             {
                 key: "multiplierAdvance",

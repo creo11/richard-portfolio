@@ -52,7 +52,7 @@ Current primary game:
 
 Additional game:
 
-**Around the Clock**
+**Around the World**
 
 The application currently has three primary UI stages:
 
@@ -60,7 +60,7 @@ The application currently has three primary UI stages:
 2. Select Players
 3. Scoring
 
-## Around the Clock
+## Around the World
 
 Players advance through 1 to 20 in order and finish on Bull. Only the active
 player's current target counts; other hits are ignored.

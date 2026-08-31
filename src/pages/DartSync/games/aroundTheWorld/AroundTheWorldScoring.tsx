@@ -1,24 +1,24 @@
 import { useState } from "react";
 import type { GameScoringViewProps } from "../types";
-import AroundTheClockDartBoard from "./AroundTheClockDartBoard";
-import { AROUND_THE_CLOCK_TARGETS } from "./types";
+import AroundTheWorldDartBoard from "./AroundTheWorldDartBoard";
+import { AROUND_THE_WORLD_TARGETS } from "./types";
 import type {
-  AroundTheClockGame,
-  AroundTheClockTarget,
+  AroundTheWorldGame,
+  AroundTheWorldTarget,
 } from "./types";
 import "../../components/Scoring/Scoring.less";
-import "./AroundTheClockScoring.less";
+import "./AroundTheWorldScoring.less";
 
-type AroundTheClockScoringProps = GameScoringViewProps<
-  AroundTheClockGame,
-  AroundTheClockTarget
+type AroundTheWorldScoringProps = GameScoringViewProps<
+  AroundTheWorldGame,
+  AroundTheWorldTarget
 >;
 
-function displayTarget(target: AroundTheClockTarget | undefined) {
+function displayTarget(target: AroundTheWorldTarget | undefined) {
   return target === "bull" ? "Bull" : target;
 }
 
-export default function AroundTheClockScoring({
+export default function AroundTheWorldScoring({
   game,
   players,
   onScoreTarget,
@@ -26,13 +26,13 @@ export default function AroundTheClockScoring({
   onEndGame,
   onUndo,
   canUndo,
-}: AroundTheClockScoringProps) {
+}: AroundTheWorldScoringProps) {
   const [showEndGameModal, setShowEndGameModal] = useState(false);
   const activeGamePlayer = game.players[game.activePlayerIndex];
   const activePlayer = players.find(
     (player) => player.id === activeGamePlayer.playerId
   );
-  const currentTarget = AROUND_THE_CLOCK_TARGETS[
+  const currentTarget = AROUND_THE_WORLD_TARGETS[
     activeGamePlayer.targetIndex
   ] ?? "bull";
   const winner = game.winnerId
@@ -44,7 +44,7 @@ export default function AroundTheClockScoring({
   ];
 
   return (
-    <div className="scoring around-clock">
+    <div className="scoring around-world">
       {showEndGameModal && (
         <div
           className="scoring__modal-overlay"
@@ -91,7 +91,7 @@ export default function AroundTheClockScoring({
           <div className="scoring__winner">
             <span className="scoring__winner-label">Winner</span>
             <h1>{winner.name}</h1>
-            <p>Around the Clock Champion</p>
+            <p>Around the World Champion</p>
             <button type="button" onClick={onEndGame}>Finish Game</button>
           </div>
         </div>
@@ -100,34 +100,34 @@ export default function AroundTheClockScoring({
       <div className="scoring__layout">
         <aside className="scoring__panel">
           <div className="scoring__player-info">
-            <span className="scoring__game-label">Around the Clock</span>
+            <span className="scoring__game-label">Around the World</span>
             <h1>{activePlayer?.name}</h1>
           </div>
 
-          <section className="around-clock__target-card">
+          <section className="around-world__target-card">
             <span>Current target</span>
             <strong>{displayTarget(currentTarget)}</strong>
             <small>
-              {activeGamePlayer.targetIndex} of {AROUND_THE_CLOCK_TARGETS.length} cleared
+              {activeGamePlayer.targetIndex} of {AROUND_THE_WORLD_TARGETS.length} cleared
             </small>
-            <div className="around-clock__progress" aria-hidden="true">
+            <div className="around-world__progress" aria-hidden="true">
               <span
                 style={{
-                  width: `${(activeGamePlayer.targetIndex / AROUND_THE_CLOCK_TARGETS.length) * 100}%`,
+                  width: `${(activeGamePlayer.targetIndex / AROUND_THE_WORLD_TARGETS.length) * 100}%`,
                 }}
               />
             </div>
           </section>
 
-          <div className="around-clock__option-status">
+          <div className="around-world__option-status">
             Multiplier advancement: {game.options.multiplierAdvance ? "On" : "Off"}
           </div>
 
           <div
-            className={`around-clock__score-actions${
+            className={`around-world__score-actions${
               game.options.multiplierAdvance
                 ? ""
-                : " around-clock__score-actions--single"
+                : " around-world__score-actions--single"
             }`}
           >
             <button type="button" onClick={() => onScoreTarget(currentTarget, 1)}>
@@ -152,16 +152,16 @@ export default function AroundTheClockScoring({
 
           <div className="scoring__waiting">
             <h2>Up Next</h2>
-            <div className="around-clock__waiting-list">
+            <div className="around-world__waiting-list">
               {waitingPlayers.map((gamePlayer, index) => {
                 const player = players.find(
                   (candidate) => candidate.id === gamePlayer.playerId
                 );
-                const target = AROUND_THE_CLOCK_TARGETS[gamePlayer.targetIndex];
+                const target = AROUND_THE_WORLD_TARGETS[gamePlayer.targetIndex];
                 if (!player) return null;
 
                 return (
-                  <div className="around-clock__waiting-card" key={gamePlayer.playerId}>
+                  <div className="around-world__waiting-card" key={gamePlayer.playerId}>
                     <span>{player.name.slice(0, 2).toUpperCase()}</span>
                     <div>
                       <strong>{player.name}</strong>
@@ -196,7 +196,7 @@ export default function AroundTheClockScoring({
             </div>
           </div>
           <div className="scoring__dartboard-frame">
-            <AroundTheClockDartBoard
+            <AroundTheWorldDartBoard
               currentTarget={currentTarget}
               onScoreTarget={onScoreTarget}
             />

@@ -4,13 +4,29 @@ import { describe, expect, it } from "vitest";
 
 import DartSync from "./DartSync";
 
+function getGameAction(gameName: string, actionName: string) {
+  const heading = screen.getByRole("heading", { level: 2, name: gameName });
+  const card = heading.closest("article");
+
+  if (!card) throw new Error(`Could not find the ${gameName} game card`);
+
+  return within(card).getByRole("button", { name: actionName });
+}
+
 describe("DartSync scoring flow", () => {
   it("renders the selected game's registered rules view", async () => {
     const user = userEvent.setup();
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "View rules" }));
+    expect(
+      screen.getByRole("img", { name: "Rick's House Rules dartboard artwork" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "Earth viewed from space" })
+    ).toBeInTheDocument();
+
+    await user.click(getGameAction("Rick's House Rules Cricket", "View Rules"));
 
     expect(
       screen.getByRole("dialog", { name: "Rick's House Rules Cricket" })
@@ -21,7 +37,7 @@ describe("DartSync scoring flow", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("plays Around the Clock with multiplier advancement and manual turns", async () => {
+  it("plays Around the World with multiplier advancement and manual turns", async () => {
     const user = userEvent.setup();
     const { container } = render(<DartSync />);
 
@@ -29,19 +45,19 @@ describe("DartSync scoring flow", () => {
       screen.getByRole("checkbox", { name: /Multiplier advancement/ })
     ).toBeChecked();
     await user.click(
-      screen.getByRole("button", { name: "View Around the Clock rules" })
+      getGameAction("Around the World", "View Rules")
     );
     expect(
-      screen.getByRole("dialog", { name: "Around the Clock" })
+      screen.getByRole("dialog", { name: "Around the World" })
     ).toBeInTheDocument();
     expect(screen.getByText(/does not record misses/i)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Got it" }));
 
     await user.click(
-      screen.getByRole("button", { name: "Select Around the Clock" })
+      getGameAction("Around the World", "Select Game")
     );
     expect(
-      screen.getByText("Choose at least two players for Around the Clock.")
+      screen.getByText("Choose at least two players for Around the World.")
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
@@ -50,7 +66,7 @@ describe("DartSync scoring flow", () => {
     );
     await user.click(screen.getByRole("button", { name: "Start game" }));
 
-    expect(screen.getByText("Around the Clock")).toBeInTheDocument();
+    expect(screen.getByText("Around the World")).toBeInTheDocument();
     expect(screen.getByText("Multiplier advancement: On")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Single 1" })
@@ -81,7 +97,7 @@ describe("DartSync scoring flow", () => {
     ).toBeInTheDocument();
   });
 
-  it("can disable Around the Clock multiplier advancement", async () => {
+  it("can disable Around the World multiplier advancement", async () => {
     const user = userEvent.setup();
     const { container } = render(<DartSync />);
 
@@ -89,7 +105,7 @@ describe("DartSync scoring flow", () => {
       screen.getByRole("checkbox", { name: /Multiplier advancement/ })
     );
     await user.click(
-      screen.getByRole("button", { name: "Select Around the Clock" })
+      getGameAction("Around the World", "Select Game")
     );
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
@@ -122,7 +138,7 @@ describe("DartSync scoring flow", () => {
     render(<DartSync />);
 
     expect(screen.queryByRole("button", { name: "Manage players" })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(
       screen.getByRole("checkbox", { name: /Randomize order/ })
@@ -156,7 +172,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: "Manage players" }));
     await user.click(screen.getByRole("button", { name: "Add player" }));
 
@@ -203,7 +219,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: "Manage players" }));
 
@@ -270,7 +286,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: "Manage players" }));
 
@@ -313,7 +329,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(screen.getByRole("button", { name: "Manage players" }));
@@ -358,7 +374,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(
@@ -391,7 +407,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(
@@ -428,7 +444,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(
@@ -471,7 +487,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(
@@ -516,7 +532,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(
@@ -567,7 +583,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(
@@ -618,7 +634,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(screen.getByRole("button", { name: /Enrique/ }));
@@ -676,7 +692,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(screen.getByRole("button", { name: /Enrique/ }));
@@ -738,7 +754,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(screen.getByRole("button", { name: /Enrique/ }));
@@ -791,7 +807,7 @@ describe("DartSync scoring flow", () => {
     await user.click(screen.getByRole("button", { name: "Finish Game" }));
 
     expect(
-      screen.getByRole("button", { name: "Select game" })
+      getGameAction("Rick's House Rules Cricket", "Select Game")
     ).toBeInTheDocument();
   });
 
@@ -800,7 +816,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(
@@ -839,7 +855,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(
@@ -886,7 +902,7 @@ describe("DartSync scoring flow", () => {
     const user = userEvent.setup();
     const { container } = render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(
@@ -916,7 +932,7 @@ describe("DartSync scoring flow", () => {
     const user = userEvent.setup();
     const { container } = render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(
@@ -963,7 +979,7 @@ describe("DartSync scoring flow", () => {
     const user = userEvent.setup();
     const { container } = render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(
@@ -1000,7 +1016,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(screen.getByRole("button", { name: "Start game" }));
@@ -1021,7 +1037,7 @@ describe("DartSync scoring flow", () => {
     await user.click(within(dialog).getByRole("button", { name: "End Game" }));
 
     expect(
-      screen.getByRole("button", { name: "Select game" })
+      getGameAction("Rick's House Rules Cricket", "Select Game")
     ).toBeInTheDocument();
   });
 
@@ -1030,7 +1046,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(screen.getByRole("button", { name: /Enrique/ }));
@@ -1056,7 +1072,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
     await user.click(screen.getByRole("button", { name: /Rick/ }));
     await user.click(screen.getByRole("button", { name: /Jaie/ }));
     await user.click(
@@ -1099,7 +1115,7 @@ describe("DartSync scoring flow", () => {
 
     render(<DartSync />);
 
-    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
 
     const startGame = screen.getByRole("button", { name: "Start game" });
     expect(startGame).toBeDisabled();

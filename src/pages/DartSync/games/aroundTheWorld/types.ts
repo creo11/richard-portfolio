@@ -1,32 +1,32 @@
-export const AROUND_THE_CLOCK_TARGETS = [
+export const AROUND_THE_WORLD_TARGETS = [
     1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
     11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
     "bull",
 ] as const;
 
-export type AroundTheClockTarget =
-    (typeof AROUND_THE_CLOCK_TARGETS)[number];
+export type AroundTheWorldTarget =
+    (typeof AROUND_THE_WORLD_TARGETS)[number];
 
-export type AroundTheClockOptions = {
+export type AroundTheWorldOptions = {
     multiplierAdvance: boolean;
 };
 
-export type AroundTheClockPlayer = {
+export type AroundTheWorldPlayer = {
     playerId: string;
     targetIndex: number;
 };
 
-export type AroundTheClockGame = {
+export type AroundTheWorldGame = {
     id: string;
-    gameType: "around-the-clock";
+    gameType: "around-the-world";
     phase: "active" | "complete";
     activePlayerIndex: number;
-    players: AroundTheClockPlayer[];
+    players: AroundTheWorldPlayer[];
     winnerId?: string;
-    options: AroundTheClockOptions;
+    options: AroundTheWorldOptions;
 };
 
-export type AroundTheClockAction = {
+export type AroundTheWorldAction = {
     playerId: string;
     type: "advance";
     previousTargetIndex: number;

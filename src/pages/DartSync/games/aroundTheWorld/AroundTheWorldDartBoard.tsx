@@ -4,17 +4,17 @@ import {
   describeRingSegment,
   polarToCartesian,
 } from "../../components/Scoring/dartboardGeometry";
-import type { AroundTheClockTarget } from "./types";
+import type { AroundTheWorldTarget } from "./types";
 
-type AroundTheClockDartBoardProps = {
-  currentTarget: AroundTheClockTarget;
-  onScoreTarget: (target: AroundTheClockTarget, multiplier?: number) => void;
+type AroundTheWorldDartBoardProps = {
+  currentTarget: AroundTheWorldTarget;
+  onScoreTarget: (target: AroundTheWorldTarget, multiplier?: number) => void;
 };
 
-export default function AroundTheClockDartBoard({
+export default function AroundTheWorldDartBoard({
   currentTarget,
   onScoreTarget,
-}: AroundTheClockDartBoardProps) {
+}: AroundTheWorldDartBoardProps) {
   const [feedback, setFeedback] = useState<{
     label: "DOUBLE" | "TRIPLE";
     key: number;
@@ -45,7 +45,7 @@ export default function AroundTheClockDartBoard({
       className="dartboard"
       viewBox="0 0 600 600"
       role="img"
-      aria-label="Around the Clock dartboard"
+      aria-label="Around the World dartboard"
     >
       <circle cx={cx} cy={cy} r="292" className="dartboard__surround" />
 
@@ -74,7 +74,7 @@ export default function AroundTheClockDartBoard({
           label?: "DOUBLE" | "TRIPLE"
         ) => {
           if (!active) return;
-          onScoreTarget(number as AroundTheClockTarget, multiplier);
+          onScoreTarget(number as AroundTheWorldTarget, multiplier);
           if (label) showFeedback(label);
         };
 
