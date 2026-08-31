@@ -5,13 +5,9 @@ import PlayerManagement from "./components/PlayerManagement/PlayerManagement";
 import PlayerSelect from "./components/PlayerSelect/PlayerSelect";
 import { MOCK_PLAYERS } from "./data/mockPlayers";
 import { getGameRegistration } from "./games/registry";
+import type { DartboardTarget, GameSetupOptions } from "./games/types";
 
 import type { Player } from "./types/player";
-import type {
-    DartSyncGame,
-    TargetKey,
-    ScoreAction,
-} from "./types/game";
 
 import "./DartSync.less";
 
@@ -37,12 +33,14 @@ function shufflePlayers(players: Player[]) {
 export default function DartSync() {
     const [step, setStep] = useState<DartSyncStep>("game-select");
     const [gamePlayers, setGamePlayers] = useState<Player[]>([]);
-    const [game, setGame] = useState<DartSyncGame | null>(null);
-    const [scoreHistory, setScoreHistory] = useState<ScoreAction[]>([]);
+    const [game, setGame] = useState<unknown | null>(null);
+    const [scoreHistory, setScoreHistory] = useState<unknown[]>([]);
     const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
     const [randomizeOrder, setRandomizeOrder] = useState(true);
     const [players, setPlayers] = useState<Player[]>(() => [...MOCK_PLAYERS]);
     const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+    const [selectedGameOptions, setSelectedGameOptions] =
+        useState<GameSetupOptions>({});
 
     useEffect(() => {
         const existingFavicon = document.querySelector(
@@ -79,9 +77,13 @@ export default function DartSync() {
         };
     }, []);
 
-    const handleGameSelect = (gameId: string) => {
+    const handleGameSelect = (
+        gameId: string,
+        options: GameSetupOptions
+    ) => {
         if (!getGameRegistration(gameId)) return;
         setSelectedGameId(gameId);
+        setSelectedGameOptions(options);
         setStep("player-select");
     };
 
@@ -102,15 +104,20 @@ export default function DartSync() {
 
         if (!gameRegistration) return;
 
-        const newGame = gameRegistration.engine.createGame(orderedPlayers);
+        const newGame = gameRegistration.engine.createGame(
+            orderedPlayers,
+            selectedGameOptions
+        );
         setGame(newGame);
 
         setStep("scoring");
     };
 
-    const handleScoreTarget = (target: TargetKey, multiplier = 1) => {
+    const handleScoreTarget = (target: DartboardTarget, multiplier = 1) => {
         if (!game) return;
-        const registration = getGameRegistration(game.gameType);
+        const registration = selectedGameId
+            ? getGameRegistration(selectedGameId)
+            : undefined;
         if (!registration) return;
 
         const result = registration.engine.scoreTarget(
@@ -129,9 +136,11 @@ export default function DartSync() {
     const handleNextPlayer = () => {
         setScoreHistory([]);
 
-        setGame((currentGame) => {
+        setGame((currentGame: unknown | null) => {
             if (!currentGame) return currentGame;
-            const registration = getGameRegistration(currentGame.gameType);
+            const registration = selectedGameId
+                ? getGameRegistration(selectedGameId)
+                : undefined;
             return registration
                 ? registration.engine.nextPlayer(currentGame)
                 : currentGame;
@@ -143,9 +152,11 @@ export default function DartSync() {
 
         if (!lastAction) return;
 
-        setGame((currentGame) => {
+        setGame((currentGame: unknown | null) => {
             if (!currentGame) return currentGame;
-            const registration = getGameRegistration(currentGame.gameType);
+            const registration = selectedGameId
+                ? getGameRegistration(selectedGameId)
+                : undefined;
             return registration
                 ? registration.engine.undo(currentGame, lastAction)
                 : currentGame;
@@ -161,6 +172,7 @@ export default function DartSync() {
         setSelectedPlayerIds([]);
         setRandomizeOrder(true);
         setSelectedGameId(null);
+        setSelectedGameOptions({});
         setStep("game-select");
     };
 
@@ -168,6 +180,7 @@ export default function DartSync() {
         setSelectedPlayerIds([]);
         setRandomizeOrder(true);
         setSelectedGameId(null);
+        setSelectedGameOptions({});
         setStep("game-select");
     };
 
@@ -217,10 +230,10 @@ export default function DartSync() {
         );
     };
 
-    const activeGameRegistration = game
-        ? getGameRegistration(game.gameType)
+    const selectedGameRegistration = selectedGameId
+        ? getGameRegistration(selectedGameId)
         : undefined;
-    const ScoringView = activeGameRegistration?.ScoringView;
+    const ScoringView = selectedGameRegistration?.ScoringView;
 
     return (
         <div className="dartsync-app">
@@ -241,6 +254,7 @@ export default function DartSync() {
 
             {step === "player-select" && (
                 <PlayerSelect
+                    gameName={selectedGameRegistration?.name ?? "DartSync"}
                     onBack={handleBackToGames}
                     onManagePlayers={() => setStep("player-management")}
                     onStartGame={handleStartGame}
@@ -252,7 +266,7 @@ export default function DartSync() {
                 />
             )}
 
-            {step === "scoring" && game && ScoringView && (
+            {step === "scoring" && game !== null && ScoringView && (
                 <ScoringView game={game}
                     players={gamePlayers}
                     onScoreTarget={handleScoreTarget}

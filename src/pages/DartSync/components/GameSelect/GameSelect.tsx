@@ -1,14 +1,27 @@
 import { useState } from "react";
 import { GAME_TYPES } from "../../data/gameTypes";
 import { getGameRegistration } from "../../games/registry";
+import type { GameSetupOptions } from "../../games/types";
 import "./GameSelect.less";
 
 type GameSelectProps = {
-  onSelectGame: (gameId: string) => void;
+  onSelectGame: (gameId: string, options: GameSetupOptions) => void;
 };
+
+function createDefaultOptions() {
+  return Object.fromEntries(
+    GAME_TYPES.map((game) => [
+      game.id,
+      Object.fromEntries(
+        game.options.map((option) => [option.key, option.defaultValue])
+      ),
+    ])
+  ) as Record<string, GameSetupOptions>;
+}
 
 export default function GameSelect({ onSelectGame }: GameSelectProps) {
   const [rulesGameId, setRulesGameId] = useState<string | null>(null);
+  const [gameOptions, setGameOptions] = useState(createDefaultOptions);
   const rulesRegistration = rulesGameId
     ? getGameRegistration(rulesGameId)
     : undefined;
@@ -62,13 +75,40 @@ export default function GameSelect({ onSelectGame }: GameSelectProps) {
                 <h2>{game.name}</h2>
                 <p>{game.description}</p>
 
+                {game.options.map((option) => (
+                  <label className="game-select__option" key={option.key}>
+                    <span className="game-select__option-switch">
+                      <input
+                        type="checkbox"
+                        checked={gameOptions[game.id]?.[option.key] ?? option.defaultValue}
+                        onChange={(event) =>
+                          setGameOptions((current) => ({
+                            ...current,
+                            [game.id]: {
+                              ...current[game.id],
+                              [option.key]: event.target.checked,
+                            },
+                          }))
+                        }
+                      />
+                      <span aria-hidden="true" />
+                    </span>
+                    <span>
+                      <strong>{option.label}</strong>
+                      <small>{option.description}</small>
+                    </span>
+                  </label>
+                ))}
+
                 <div className="game-select__actions">
                   <button
                     type="button"
                     className="game-select__action game-select__action--primary"
-                    onClick={() => onSelectGame(game.id)}
+                    onClick={() => onSelectGame(game.id, gameOptions[game.id] ?? {})}
                   >
-                    Select game
+                    {game.id === "house-cricket"
+                      ? "Select game"
+                      : `Select ${game.name}`}
                     <svg viewBox="0 0 20 20" aria-hidden="true">
                       <path d="M4 10h11M11 6l4 4-4 4" />
                     </svg>
@@ -79,7 +119,9 @@ export default function GameSelect({ onSelectGame }: GameSelectProps) {
                     className="game-select__action game-select__action--secondary"
                     onClick={() => setRulesGameId(game.id)}
                   >
-                    View rules
+                    {game.id === "house-cricket"
+                      ? "View rules"
+                      : `View ${game.name} rules`}
                   </button>
                 </div>
               </div>

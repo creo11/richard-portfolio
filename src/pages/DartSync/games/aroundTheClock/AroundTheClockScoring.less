@@ -1,0 +1,118 @@
+.around-clock {
+  &__target-card {
+    display: grid;
+    padding: 24px;
+    border: 1px solid rgba(41, 182, 216, 0.3);
+    border-radius: 14px;
+    background:
+      linear-gradient(var(--dartsync-accent-soft), var(--dartsync-accent-soft)),
+      var(--dartsync-panel-raised);
+
+    > span {
+      color: #79d9ef;
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    > strong {
+      margin: 8px 0 2px;
+      color: var(--dartsync-text);
+      font-size: clamp(52px, 6vw, 76px);
+      line-height: 1;
+      letter-spacing: -0.05em;
+    }
+
+    > small { color: var(--dartsync-text-muted); font-size: 11px; }
+  }
+
+  &__progress {
+    height: 5px;
+    margin-top: 18px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #282a38;
+
+    span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--dartsync-accent);
+      transition: width 180ms ease;
+    }
+  }
+
+  &__option-status {
+    margin-top: 12px;
+    color: var(--dartsync-text-muted);
+    font-size: 11px;
+    text-align: center;
+  }
+
+  &__score-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 18px;
+
+    button {
+      min-width: 0;
+      padding: 11px 7px;
+      border: 1px solid var(--dartsync-border);
+      border-radius: 8px;
+      background: var(--dartsync-panel-raised);
+      color: var(--dartsync-text);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+
+      &:hover { border-color: rgba(41, 182, 216, 0.5); }
+
+      &:focus-visible {
+        outline: 3px solid rgba(41, 182, 216, 0.28);
+        outline-offset: 2px;
+      }
+    }
+
+    &--single {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__waiting-list { display: grid; gap: 10px; }
+
+  &__waiting-card {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 12px;
+    border: 1px solid var(--dartsync-border);
+    border-radius: 10px;
+    background: var(--dartsync-panel-raised);
+
+    > span {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border: 1px solid #3a3d50;
+      border-radius: 9px;
+      color: var(--dartsync-text);
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    > div { display: grid; gap: 2px; }
+    strong { color: var(--dartsync-text); font-size: 12px; }
+    small { color: var(--dartsync-text-muted); font-size: 10px; }
+    em {
+      margin-left: auto;
+      color: #79d9ef;
+      font-size: 9px;
+      font-style: normal;
+      font-weight: 750;
+      text-transform: uppercase;
+    }
+  }
+}

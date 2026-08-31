@@ -1,80 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import type { PlayerGameState, TargetKey } from "../../types/game";
+import {
+    BOARD_NUMBERS,
+    describeRingSegment,
+    polarToCartesian,
+} from "./dartboardGeometry";
 
 type DartBoardProps = {
     player: PlayerGameState;
     onScoreTarget: (target: TargetKey, multiplier?: number) => void;
 };
 
-const BOARD_NUMBERS = [
-    20, 1, 18, 4, 13,
-    6, 10, 15, 2, 17,
-    3, 19, 7, 16, 8,
-    11, 14, 9, 12, 5,
-];
-
 const CRICKET_TARGETS = new Set<number>([
     15, 16, 17, 18, 19, 20,
 ]);
-
-function polarToCartesian(
-    cx: number,
-    cy: number,
-    radius: number,
-    angle: number
-) {
-    const radians = ((angle - 90) * Math.PI) / 180;
-
-    return {
-        x: cx + radius * Math.cos(radians),
-        y: cy + radius * Math.sin(radians),
-    };
-}
-
-function describeRingSegment(
-    cx: number,
-    cy: number,
-    innerRadius: number,
-    outerRadius: number,
-    startAngle: number,
-    endAngle: number
-) {
-    const outerStart = polarToCartesian(
-        cx,
-        cy,
-        outerRadius,
-        startAngle
-    );
-
-    const outerEnd = polarToCartesian(
-        cx,
-        cy,
-        outerRadius,
-        endAngle
-    );
-
-    const innerEnd = polarToCartesian(
-        cx,
-        cy,
-        innerRadius,
-        endAngle
-    );
-
-    const innerStart = polarToCartesian(
-        cx,
-        cy,
-        innerRadius,
-        startAngle
-    );
-
-    return [
-        `M ${outerStart.x} ${outerStart.y}`,
-        `A ${outerRadius} ${outerRadius} 0 0 1 ${outerEnd.x} ${outerEnd.y}`,
-        `L ${innerEnd.x} ${innerEnd.y}`,
-        `A ${innerRadius} ${innerRadius} 0 0 0 ${innerStart.x} ${innerStart.y}`,
-        "Z",
-    ].join(" ");
-}
 
 function getHighlightClass(markCount: number) {
     if (markCount >= 3) return "";

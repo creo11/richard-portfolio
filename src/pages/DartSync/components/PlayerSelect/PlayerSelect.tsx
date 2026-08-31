@@ -3,6 +3,7 @@ import type { Player } from "../../types/player";
 import "./PlayerSelect.less";
 
 type PlayerSelectProps = {
+  gameName: string;
   onBack: () => void;
   onManagePlayers: () => void;
   onStartGame: (players: Player[], randomize: boolean) => void;
@@ -23,6 +24,7 @@ function getInitials(name: string) {
 }
 
 export default function PlayerSelect({
+  gameName,
   onBack,
   onManagePlayers,
   onStartGame,
@@ -95,7 +97,7 @@ export default function PlayerSelect({
           <div className="player-select__intro">
             <span className="player-select__eyebrow">Game setup</span>
             <h1>Select players</h1>
-            <p>Choose at least two players for Rick's House Rules Cricket.</p>
+            <p>Choose at least two players for {gameName}.</p>
           </div>
         </div>
       </header>

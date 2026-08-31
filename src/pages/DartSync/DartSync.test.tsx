@@ -21,6 +21,101 @@ describe("DartSync scoring flow", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("plays Around the Clock with multiplier advancement and manual turns", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<DartSync />);
+
+    expect(
+      screen.getByRole("checkbox", { name: /Multiplier advancement/ })
+    ).toBeChecked();
+    await user.click(
+      screen.getByRole("button", { name: "View Around the Clock rules" })
+    );
+    expect(
+      screen.getByRole("dialog", { name: "Around the Clock" })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/does not record misses/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Got it" }));
+
+    await user.click(
+      screen.getByRole("button", { name: "Select Around the Clock" })
+    );
+    expect(
+      screen.getByText("Choose at least two players for Around the Clock.")
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Rick/ }));
+    await user.click(screen.getByRole("button", { name: /Jaie/ }));
+    await user.click(
+      screen.getByRole("checkbox", { name: /Randomize order/ })
+    );
+    await user.click(screen.getByRole("button", { name: "Start game" }));
+
+    expect(screen.getByText("Around the Clock")).toBeInTheDocument();
+    expect(screen.getByText("Multiplier advancement: On")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Single 1" })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Double 1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Triple 1" })).toBeInTheDocument();
+
+    const tripleOne = container.querySelector(
+      '[data-target="1"][data-multiplier="3"]'
+    );
+    expect(tripleOne).not.toBeNull();
+    await user.click(tripleOne!);
+
+    expect(screen.getByText("TRIPLE")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Single 4" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Rick" })
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Next Player" }));
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Jaie" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Single 1" })
+    ).toBeInTheDocument();
+  });
+
+  it("can disable Around the Clock multiplier advancement", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<DartSync />);
+
+    await user.click(
+      screen.getByRole("checkbox", { name: /Multiplier advancement/ })
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Select Around the Clock" })
+    );
+    await user.click(screen.getByRole("button", { name: /Rick/ }));
+    await user.click(screen.getByRole("button", { name: /Jaie/ }));
+    await user.click(
+      screen.getByRole("checkbox", { name: /Randomize order/ })
+    );
+    await user.click(screen.getByRole("button", { name: "Start game" }));
+
+    const tripleOne = container.querySelector(
+      '[data-target="1"][data-multiplier="3"]'
+    );
+    expect(tripleOne).not.toBeNull();
+    await user.click(tripleOne!);
+
+    expect(screen.getByText("Multiplier advancement: Off")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Score 2" })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Double 2" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Triple 2" })
+    ).not.toBeInTheDocument();
+  });
+
   it("opens player management from selection and preserves setup state", async () => {
     const user = userEvent.setup();
 

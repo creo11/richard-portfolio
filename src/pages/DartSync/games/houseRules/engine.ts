@@ -349,7 +349,8 @@ function undo(game: DartSyncGame, action: ScoreAction): DartSyncGame {
 export const houseRulesEngine: GameEngine<
     DartSyncGame,
     TargetKey,
-    ScoreAction
+    ScoreAction,
+    Record<string, never>
 > = {
     createGame,
     scoreTarget,

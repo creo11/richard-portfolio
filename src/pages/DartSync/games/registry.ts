@@ -1,11 +1,13 @@
 import Scoring from "../components/Scoring/Scoring";
-import type { DartSyncGame, ScoreAction, TargetKey } from "../types/game";
+import AroundTheClockRules from "./aroundTheClock/AroundTheClockRules";
+import AroundTheClockScoring from "./aroundTheClock/AroundTheClockScoring";
+import { aroundTheClockEngine } from "./aroundTheClock/engine";
 import HouseRulesRules from "./houseRules/HouseRulesRules";
 import { houseRulesEngine } from "./houseRules/engine";
-import type { GameDefinition } from "./types";
+import { defineGame } from "./types";
 
 export const GAME_REGISTRY = {
-    "house-cricket": {
+    "house-cricket": defineGame({
         id: "house-cricket",
         name: "Rick's House Rules Cricket",
         description:
@@ -13,7 +15,24 @@ export const GAME_REGISTRY = {
         engine: houseRulesEngine,
         ScoringView: Scoring,
         RulesView: HouseRulesRules,
-    } satisfies GameDefinition<DartSyncGame, TargetKey, ScoreAction>,
+    }),
+    "around-the-clock": defineGame({
+        id: "around-the-clock",
+        name: "Around the Clock",
+        description:
+            "Race from 1 through 20 and finish on Bull. Only your current target counts.",
+        engine: aroundTheClockEngine,
+        ScoringView: AroundTheClockScoring,
+        RulesView: AroundTheClockRules,
+        options: [
+            {
+                key: "multiplierAdvance",
+                label: "Multiplier advancement",
+                description: "Doubles skip 2 targets and triples skip 3.",
+                defaultValue: true,
+            },
+        ],
+    }),
 } as const;
 
 export type GameId = keyof typeof GAME_REGISTRY;

@@ -50,11 +50,33 @@ Current primary game:
 
 **House Rules Cricket**
 
+Additional game:
+
+**Around the Clock**
+
 The application currently has three primary UI stages:
 
 1. Select Game
 2. Select Players
 3. Scoring
+
+## Around the Clock
+
+Players advance through 1 to 20 in order and finish on Bull. Only the active
+player's current target counts; other hits are ignored.
+
+The game card includes a **Multiplier advancement** option that defaults to on:
+
+- Single advances 1 target
+- Double advances 2 targets
+- Triple advances 3 targets
+
+When the option is off, any valid hit advances exactly one target. Advancement
+is capped at completion, so a double 20 can advance through 20 and Bull to win.
+
+Turns never advance automatically. DartSync does not record misses, so the
+scorer selects Next Player after all three darts are thrown. Undo restores the
+target from before the most recent successful dart.
 
 ## Game Engine Architecture
 
