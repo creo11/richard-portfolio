@@ -183,6 +183,92 @@
         color: var(--dartsync-accent);
     }
 
+    &__modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 1100;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: rgba(5, 6, 11, 0.82);
+        backdrop-filter: blur(6px);
+    }
+
+    &__modal {
+        box-sizing: border-box;
+        width: min(100%, 420px);
+        padding: 28px;
+        border: 1px solid var(--dartsync-border);
+        border-radius: 14px;
+        background: var(--dartsync-panel);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.48);
+        text-align: left;
+
+        h2 {
+            margin: 8px 0 10px;
+            color: var(--dartsync-text);
+            font-size: 24px;
+            letter-spacing: -0.025em;
+        }
+
+        p {
+            margin: 0;
+            color: var(--dartsync-text-muted);
+            font-size: 14px;
+            line-height: 1.55;
+        }
+    }
+
+    &__modal-label {
+        color: #ff9aa8;
+        font-size: 11px;
+        font-weight: 750;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+
+    &__modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 28px;
+
+        button {
+            padding: 11px 18px;
+            border-radius: 8px;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+
+            &:focus-visible {
+                outline: 3px solid rgba(41, 182, 216, 0.28);
+                outline-offset: 2px;
+            }
+        }
+    }
+
+    &__modal-cancel {
+        border: 1px solid var(--dartsync-border);
+        background: #1b1d29;
+        color: var(--dartsync-text-muted);
+
+        &:hover {
+            color: var(--dartsync-text);
+            border-color: #45495c;
+        }
+    }
+
+    &__modal-confirm {
+        border: 1px solid rgba(224, 75, 96, 0.5);
+        background: rgba(224, 75, 96, 0.12);
+        color: #ff9aa8;
+
+        &:hover {
+            background: rgba(224, 75, 96, 0.2);
+        }
+    }
+
     &__player-info {
         margin-bottom: 24px;
         text-align: left;
@@ -691,9 +777,41 @@
         }
 
         &--closed {
-            opacity: 0.45;
+            opacity: 1;
             cursor: default;
         }
+    }
+
+    &__score-feedback {
+        fill: #fff;
+        font-size: 44px;
+        font-weight: 850;
+        letter-spacing: 0.08em;
+        paint-order: stroke;
+        pointer-events: none;
+        stroke: rgba(5, 6, 11, 0.72);
+        stroke-width: 7px;
+        user-select: none;
+        animation: dartboard-score-feedback 650ms ease-out forwards;
+    }
+}
+
+@keyframes dartboard-score-feedback {
+    0% {
+        opacity: 0;
+        transform: scale(0.88);
+        transform-origin: center;
+    }
+
+    16% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(1.06);
+        transform-origin: center;
     }
 }
 

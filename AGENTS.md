@@ -80,13 +80,13 @@ Each target requires **3 marks** to close.
 - Double = 2 marks
 - Triple = 3 marks
 
-However, DartSync intentionally does NOT infer singles/doubles/triples from the dartboard.
-
-The scorer manually taps the target the appropriate number of times.
+The interactive dartboard infers doubles and triples from the SVG ring that is tapped.
+The scoring-panel target buttons remain manual single-mark controls.
 
 Example:
 
-A triple 20 is entered by tapping 20 three times.
+A triple 20 may be entered by tapping the triple ring once, or by tapping the
+20 scoring-panel target three times.
 
 There is no traditional Cricket point scoring.
 
@@ -135,7 +135,7 @@ Once closed:
 - Single Bull = 1 showdown bull
 - Double Bull = 2 showdown bulls
 
-These are still entered manually through taps.
+The outer bull records 1 showdown bull. The inner double bull records 2.
 
 ## Important Example
 

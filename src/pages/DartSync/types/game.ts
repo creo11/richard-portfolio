@@ -33,6 +33,7 @@ export type ScoreAction = {
     playerId: string;
     target: TargetKey;
     type: "mark" | "showdown-bull";
+    marksAdded: number;
 };
 
 export const CRICKET_TARGETS: TargetKey[] = [

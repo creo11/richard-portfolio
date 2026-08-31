@@ -1,8 +1,9 @@
+import { useEffect, useRef, useState } from "react";
 import type { PlayerGameState, TargetKey } from "../../types/game";
 
 type DartBoardProps = {
     player: PlayerGameState;
-    onScoreTarget: (target: TargetKey) => void;
+    onScoreTarget: (target: TargetKey, multiplier?: number) => void;
 };
 
 const BOARD_NUMBERS = [
@@ -93,6 +94,11 @@ export default function DartBoard({
     player,
     onScoreTarget,
 }: DartBoardProps) {
+    const [scoreFeedback, setScoreFeedback] = useState<{
+        label: "DOUBLE" | "TRIPLE";
+        key: number;
+    } | null>(null);
+    const feedbackTimer = useRef<number | undefined>(undefined);
     const cx = 300;
     const cy = 300;
 
@@ -116,6 +122,22 @@ export default function DartBoard({
     const bullInner = 14;
 
     const numberRadius = 275;
+
+    const showScoreFeedback = (label: "DOUBLE" | "TRIPLE") => {
+        window.clearTimeout(feedbackTimer.current);
+        setScoreFeedback((current) => ({
+            label,
+            key: (current?.key ?? 0) + 1,
+        }));
+        feedbackTimer.current = window.setTimeout(
+            () => setScoreFeedback(null),
+            650
+        );
+    };
+
+    useEffect(() => {
+        return () => window.clearTimeout(feedbackTimer.current);
+    }, []);
 
     return (
         <svg
@@ -159,12 +181,16 @@ export default function DartBoard({
                     ? "dartboard__ring--dark"
                     : "dartboard__ring--light";
 
-                const clickTarget = () => {
+                const scoreTarget = (
+                    multiplier: 1 | 2 | 3,
+                    feedback?: "DOUBLE" | "TRIPLE"
+                ) => {
                     if (!isCricketTarget || marks === null) return;
 
                     if (marks >= 3) return;
 
-                    onScoreTarget(number as TargetKey);
+                    onScoreTarget(number as TargetKey, multiplier);
+                    if (feedback) showScoreFeedback(feedback);
                 };
 
                 const numberPosition = polarToCartesian(
@@ -182,7 +208,6 @@ export default function DartBoard({
                                 ? "dartboard__wedge dartboard__wedge--interactive"
                                 : "dartboard__wedge"
                         }
-                        onClick={clickTarget}
                     >
                         {/* Inner single */}
                         <path
@@ -201,6 +226,8 @@ export default function DartBoard({
                             ]
                                 .filter(Boolean)
                                 .join(" ")}
+                            data-multiplier="1"
+                            onClick={() => scoreTarget(1)}
                         />
 
                         {/* Triple */}
@@ -220,6 +247,8 @@ export default function DartBoard({
                             ]
                                 .filter(Boolean)
                                 .join(" ")}
+                            data-multiplier="3"
+                            onClick={() => scoreTarget(3, "TRIPLE")}
                         />
 
                         {/* Outer single */}
@@ -239,6 +268,8 @@ export default function DartBoard({
                             ]
                                 .filter(Boolean)
                                 .join(" ")}
+                            data-multiplier="1"
+                            onClick={() => scoreTarget(1)}
                         />
 
                         {/* Double */}
@@ -258,6 +289,8 @@ export default function DartBoard({
                             ]
                                 .filter(Boolean)
                                 .join(" ")}
+                            data-multiplier="2"
+                            onClick={() => scoreTarget(2, "DOUBLE")}
                         />
 
                         {/* Number */}
@@ -293,7 +326,7 @@ export default function DartBoard({
                 ].join(" ")}
                 onClick={() => {
                     if (player.marks.bull < 3 || player.isClosedOut) {
-                        onScoreTarget("bull");
+                        onScoreTarget("bull", 1);
                     }
                 }}
             />
@@ -312,10 +345,24 @@ export default function DartBoard({
                 ].join(" ")}
                 onClick={() => {
                     if (player.marks.bull < 3 || player.isClosedOut) {
-                        onScoreTarget("bull");
+                        onScoreTarget("bull", 2);
+                        showScoreFeedback("DOUBLE");
                     }
                 }}
             />
+
+            {scoreFeedback && (
+                <text
+                    key={scoreFeedback.key}
+                    x={cx}
+                    y={cy}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    className="dartboard__score-feedback"
+                >
+                    {scoreFeedback.label}
+                </text>
+            )}
         </svg>
     );
 }

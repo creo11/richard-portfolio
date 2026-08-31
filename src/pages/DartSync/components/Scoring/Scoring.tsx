@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { DartSyncGame, TargetKey } from "../../types/game";
 import type { Player } from "../../types/player";
 import CricketMarks from "./CricketMarks";
@@ -8,7 +9,7 @@ import "./Scoring.less";
 type ScoringProps = {
     game: DartSyncGame;
     players: Player[];
-    onScoreTarget: (target: TargetKey) => void;
+    onScoreTarget: (target: TargetKey, multiplier?: number) => void;
     onNextPlayer: () => void;
     onEndGame: () => void;
     onUndo: () => void;
@@ -39,6 +40,7 @@ export default function Scoring({
     onUndo,
     canUndo,
 }: ScoringProps) {
+    const [showEndGameModal, setShowEndGameModal] = useState(false);
     const activeGamePlayer = game.players[game.activePlayerIndex];
 
     const waitingGamePlayers =
@@ -76,6 +78,53 @@ export default function Scoring({
 
     return (
         <div className="scoring">
+            {showEndGameModal && (
+                <div
+                    className="scoring__modal-overlay"
+                    role="presentation"
+                    onKeyDown={(event) => {
+                        if (event.key === "Escape") {
+                            setShowEndGameModal(false);
+                        }
+                    }}
+                >
+                    <div
+                        className="scoring__modal"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="end-game-title"
+                        aria-describedby="end-game-description"
+                    >
+                        <span className="scoring__modal-label">End game</span>
+                        <h2 id="end-game-title">Leave this game?</h2>
+                        <p id="end-game-description">
+                            The current game and all recorded marks will be lost.
+                        </p>
+
+                        <div className="scoring__modal-actions">
+                            <button
+                                type="button"
+                                className="scoring__modal-cancel"
+                                autoFocus
+                                onClick={() => setShowEndGameModal(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="scoring__modal-confirm"
+                                onClick={() => {
+                                    setShowEndGameModal(false);
+                                    onEndGame();
+                                }}
+                            >
+                                End Game
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {game.phase === "complete" && winner && (
                 <div className="scoring__winner-overlay">
                     <div className="scoring__winner">
@@ -284,7 +333,7 @@ export default function Scoring({
                             <button
                                 type="button"
                                 className="scoring__end-game"
-                                onClick={onEndGame}
+                                onClick={() => setShowEndGameModal(true)}
                             >
                                 End Game
                             </button>

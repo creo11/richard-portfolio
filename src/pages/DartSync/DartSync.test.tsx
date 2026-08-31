@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import DartSync from "./DartSync";
 
@@ -440,10 +440,8 @@ describe("DartSync scoring flow", () => {
       screen.getByRole("button", { name: "Finish Game" })
     ).toBeInTheDocument();
 
-    const confirm = vi.spyOn(window, "confirm");
     await user.click(screen.getByRole("button", { name: "Finish Game" }));
 
-    expect(confirm).not.toHaveBeenCalled();
     expect(
       screen.getByRole("button", { name: "Select game" })
     ).toBeInTheDocument();
@@ -536,7 +534,7 @@ describe("DartSync scoring flow", () => {
     ).toBeInTheDocument();
   });
 
-  it("records both dartboard bull rings as manual single taps", async () => {
+  it("scores the outer bull as one and the inner bull as two", async () => {
     const user = userEvent.setup();
     const { container } = render(<DartSync />);
 
@@ -561,13 +559,96 @@ describe("DartSync scoring flow", () => {
 
     await user.click(innerBull!);
     expect(
-      screen.getByRole("button", { name: "Bull, 2 of 3 marks" })
+      screen.getByRole("button", { name: "Bull, 3 of 3 marks" })
+    ).toBeInTheDocument();
+    expect(screen.getByText("DOUBLE")).toBeInTheDocument();
+  });
+
+  it("scores ring multipliers, shows feedback, and undoes the full dart", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<DartSync />);
+
+    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(screen.getByRole("button", { name: /Rick/ }));
+    await user.click(screen.getByRole("button", { name: /Jaie/ }));
+    await user.click(
+      screen.getByRole("checkbox", { name: /Randomize order/ })
+    );
+    await user.click(screen.getByRole("button", { name: "Start game" }));
+
+    const tripleTwenty = container.querySelector(
+      ".dartboard__wedge--interactive [data-multiplier='3']"
+    );
+    expect(tripleTwenty).not.toBeNull();
+
+    await user.click(tripleTwenty!);
+
+    expect(screen.getByText("TRIPLE")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "20, 3 of 3 marks" })
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Undo" }));
+    expect(
+      screen.getByRole("button", { name: "20, 0 of 3 marks" })
+    ).toBeInTheDocument();
+
+    const doubleTwenty = container.querySelector(
+      ".dartboard__wedge--interactive [data-multiplier='2']"
+    );
+    expect(doubleTwenty).not.toBeNull();
+
+    await user.click(doubleTwenty!);
+
+    expect(screen.getByText("DOUBLE")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "20, 2 of 3 marks" })
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Undo" }));
+    expect(
+      screen.getByRole("button", { name: "20, 0 of 3 marks" })
     ).toBeInTheDocument();
   });
 
-  it("requires confirmation before ending an active game", async () => {
+  it("scores and undoes a double bull after closing out", async () => {
     const user = userEvent.setup();
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const { container } = render(<DartSync />);
+
+    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(screen.getByRole("button", { name: /Rick/ }));
+    await user.click(screen.getByRole("button", { name: /Jaie/ }));
+    await user.click(
+      screen.getByRole("checkbox", { name: /Randomize order/ })
+    );
+    await user.click(screen.getByRole("button", { name: "Start game" }));
+
+    for (const target of ["15", "16", "17", "18", "19", "20", "Bull"]) {
+      for (let mark = 0; mark < 3; mark += 1) {
+        await user.click(
+          screen.getByRole("button", {
+            name: `${target}, ${mark} of 3 marks`,
+          })
+        );
+      }
+    }
+
+    const innerBull = container.querySelector(".dartboard__bull--inner");
+    expect(innerBull).not.toBeNull();
+    await user.click(innerBull!);
+
+    expect(screen.getByText("Showdown Bulls: 2")).toBeInTheDocument();
+    expect(screen.getByText("DOUBLE")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Undo" }));
+    expect(screen.queryByText(/Showdown Bulls:/)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Bull, 0 showdown bulls" })
+    ).toBeInTheDocument();
+  });
+
+  it("requires modal confirmation before ending an active game", async () => {
+    const user = userEvent.setup();
 
     render(<DartSync />);
 
@@ -577,13 +658,20 @@ describe("DartSync scoring flow", () => {
     await user.click(screen.getByRole("button", { name: "Start game" }));
     await user.click(screen.getByRole("button", { name: "End Game" }));
 
-    expect(confirm).toHaveBeenCalledOnce();
+    let dialog = screen.getByRole("dialog", { name: "Leave this game?" });
+    expect(dialog).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(/all recorded marks will be lost/i)
+    ).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "End Game" })).toBeInTheDocument();
 
-    confirm.mockReturnValue(true);
     await user.click(screen.getByRole("button", { name: "End Game" }));
+    dialog = screen.getByRole("dialog", { name: "Leave this game?" });
+    await user.click(within(dialog).getByRole("button", { name: "End Game" }));
 
-    expect(confirm).toHaveBeenCalledTimes(2);
     expect(
       screen.getByRole("button", { name: "Select game" })
     ).toBeInTheDocument();

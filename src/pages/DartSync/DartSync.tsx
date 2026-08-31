@@ -93,7 +93,7 @@ export default function DartSync() {
         setStep("scoring");
     };
 
-    const handleScoreTarget = (target: TargetKey) => {
+    const handleScoreTarget = (target: TargetKey, multiplier = 1) => {
         if (!game) return;
 
         const activePlayerIndex = game.activePlayerIndex;
@@ -113,12 +113,13 @@ export default function DartSync() {
                     playerId: activePlayer.playerId,
                     target,
                     type: "showdown-bull",
+                    marksAdded: multiplier,
                 },
             ]);
 
             const updatedPlayer = {
                 ...activePlayer,
-                showdownBulls: activePlayer.showdownBulls + 1,
+                showdownBulls: activePlayer.showdownBulls + multiplier,
             };
 
             const updatedPlayers = [...game.players];
@@ -159,18 +160,21 @@ export default function DartSync() {
 
         if (currentMarks >= 3) return;
 
+        const marksAdded = Math.min(multiplier, 3 - currentMarks);
+
         setScoreHistory((history) => [
             ...history,
             {
                 playerId: activePlayer.playerId,
                 target,
                 type: "mark",
+                marksAdded,
             },
         ]);
 
         const updatedMarks = {
             ...activePlayer.marks,
-            [target]: currentMarks + 1,
+            [target]: currentMarks + marksAdded,
         };
 
         const updatedPlayer = {
@@ -477,7 +481,10 @@ export default function DartSync() {
             if (lastAction.type === "showdown-bull") {
                 const updatedPlayer = {
                     ...player,
-                    showdownBulls: Math.max(0, player.showdownBulls - 1),
+                    showdownBulls: Math.max(
+                        0,
+                        player.showdownBulls - lastAction.marksAdded
+                    ),
                 };
 
                 const updatedPlayers = [...currentGame.players];
@@ -509,7 +516,10 @@ export default function DartSync() {
 
             const updatedMarks = {
                 ...player.marks,
-                [lastAction.target]: Math.max(0, currentMarks - 1),
+                [lastAction.target]: Math.max(
+                    0,
+                    currentMarks - lastAction.marksAdded
+                ),
             };
 
             const updatedPlayer = {
@@ -546,14 +556,6 @@ export default function DartSync() {
     };
 
     const handleEndGame = () => {
-        if (game?.phase !== "complete") {
-            const confirmed = window.confirm(
-                "Are you sure you want to end this game?"
-            );
-
-            if (!confirmed) return;
-        }
-
         setScoreHistory([]);
         setGame(null);
         setGamePlayers([]);
