@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import GameSelect from "./components/GameSelect/GameSelect";
 import PlayerManagement from "./components/PlayerManagement/PlayerManagement";
 import PlayerSelect from "./components/PlayerSelect/PlayerSelect";
-import Scoring from "./components/Scoring/Scoring";
 import { MOCK_PLAYERS } from "./data/mockPlayers";
 import { getGameRegistration } from "./games/registry";
 
@@ -218,6 +217,11 @@ export default function DartSync() {
         );
     };
 
+    const activeGameRegistration = game
+        ? getGameRegistration(game.gameType)
+        : undefined;
+    const ScoringView = activeGameRegistration?.ScoringView;
+
     return (
         <div className="dartsync-app">
             {step === "game-select" && (
@@ -248,8 +252,8 @@ export default function DartSync() {
                 />
             )}
 
-            {step === "scoring" && game && (
-                <Scoring game={game}
+            {step === "scoring" && game && ScoringView && (
+                <ScoringView game={game}
                     players={gamePlayers}
                     onScoreTarget={handleScoreTarget}
                     onNextPlayer={handleNextPlayer}

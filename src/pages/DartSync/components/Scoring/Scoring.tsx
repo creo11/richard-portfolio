@@ -1,20 +1,12 @@
 import { useState } from "react";
 import type { DartSyncGame, TargetKey } from "../../types/game";
-import type { Player } from "../../types/player";
+import type { GameScoringViewProps } from "../../games/types";
 import CricketMarks from "./CricketMarks";
 import DartBoard from "./DartBoard";
 
 import "./Scoring.less";
 
-type ScoringProps = {
-    game: DartSyncGame;
-    players: Player[];
-    onScoreTarget: (target: TargetKey, multiplier?: number) => void;
-    onNextPlayer: () => void;
-    onEndGame: () => void;
-    onUndo: () => void;
-    canUndo: boolean;
-};
+type ScoringProps = GameScoringViewProps<DartSyncGame, TargetKey>;
 
 const TARGETS: TargetKey[] = [15, 16, 17, 18, 19, 20];
 

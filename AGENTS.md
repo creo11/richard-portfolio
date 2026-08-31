@@ -71,9 +71,10 @@ The engine owns game creation, scoring, turn advancement, and undo. The main
 the selected registered engine. Keep new game-specific rules out of the page
 component; add them through a dedicated engine and registry entry.
 
-The current scoring presentation is still House Rules-specific. A future game
-that needs a different scoreboard should register or select its own scoring
-view rather than adding unrelated rules to the existing `Scoring` component.
+Each registry entry supplies its own scoring and rules views. House Rules uses
+the existing Cricket scoring presentation. A future game that needs a different
+scoreboard must register its own view rather than adding unrelated rules to the
+House Rules `Scoring` component.
 
 ---
 

@@ -5,6 +5,22 @@ import { describe, expect, it } from "vitest";
 import DartSync from "./DartSync";
 
 describe("DartSync scoring flow", () => {
+  it("renders the selected game's registered rules view", async () => {
+    const user = userEvent.setup();
+
+    render(<DartSync />);
+
+    await user.click(screen.getByRole("button", { name: "View rules" }));
+
+    expect(
+      screen.getByRole("dialog", { name: "Rick's House Rules Cricket" })
+    ).toBeInTheDocument();
+    expect(screen.getByText("Bullseye Showdown")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Got it" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("opens player management from selection and preserves setup state", async () => {
     const user = userEvent.setup();
 
