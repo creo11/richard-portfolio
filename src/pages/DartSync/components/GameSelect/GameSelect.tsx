@@ -163,10 +163,10 @@ export default function GameSelect({
                   <li>A triple counts as three marks.</li>
                 </ul>
                 <p>
-                  DartSync records marks rather than dart multipliers. Tap a
-                  target once for every mark scored—for example, tap 20 three
-                  times for a triple 20. The scorer advances the turn after
-                  all three darts have been thrown.
+                  The interactive dartboard detects double and triple rings.
+                  The scoring-panel controls remain manual one-mark buttons,
+                  so a triple 20 can also be entered by tapping 20 three times.
+                  The scorer advances the turn after all three darts are thrown.
                 </p>
               </section>
 
@@ -192,7 +192,8 @@ export default function GameSelect({
                   Showdown Bull counting begins the moment a player closes all
                   Cricket targets. Bulls hit before closing do not count.
                   After closing, a single Bull adds one showdown bull and a
-                  double Bull adds two; enter these with one or two taps.
+                  double Bull adds two. The inner bull records the double
+                  automatically.
                 </p>
                 <div className="rules-modal__example">
                   <strong>Example</strong>

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 
 import GameSelect from "./components/GameSelect/GameSelect";
+import PlayerManagement from "./components/PlayerManagement/PlayerManagement";
 import PlayerSelect from "./components/PlayerSelect/PlayerSelect";
 import Scoring from "./components/Scoring/Scoring";
+import { MOCK_PLAYERS } from "./data/mockPlayers";
 import { hasClosedAllTargets } from "./types/game";
 
 import type { Player } from "./types/player";
@@ -18,7 +20,11 @@ import "./DartSync.less";
 
 
 
-type DartSyncStep = "game-select" | "player-select" | "scoring";
+type DartSyncStep =
+    | "game-select"
+    | "player-management"
+    | "player-select"
+    | "scoring";
 
 function shufflePlayers(players: Player[]) {
     const shuffled = [...players];
@@ -36,6 +42,9 @@ export default function DartSync() {
     const [gamePlayers, setGamePlayers] = useState<Player[]>([]);
     const [game, setGame] = useState<DartSyncGame | null>(null);
     const [scoreHistory, setScoreHistory] = useState<ScoreAction[]>([]);
+    const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
+    const [randomizeOrder, setRandomizeOrder] = useState(true);
+    const [players, setPlayers] = useState<Player[]>(() => [...MOCK_PLAYERS]);
 
     useEffect(() => {
         const existingFavicon = document.querySelector(
@@ -559,7 +568,28 @@ export default function DartSync() {
         setScoreHistory([]);
         setGame(null);
         setGamePlayers([]);
+        setSelectedPlayerIds([]);
+        setRandomizeOrder(true);
         setStep("game-select");
+    };
+
+    const handleBackToGames = () => {
+        setSelectedPlayerIds([]);
+        setRandomizeOrder(true);
+        setStep("game-select");
+    };
+
+    const handleCreatePlayer = (name: string, description?: string) => {
+        setPlayers((currentPlayers) => [
+            ...currentPlayers,
+            {
+                id: crypto.randomUUID(),
+                name,
+                description,
+                wins: 0,
+                gamesPlayed: 0,
+            },
+        ]);
     };
 
     return (
@@ -568,10 +598,24 @@ export default function DartSync() {
                 <GameSelect onSelectGame={handleGameSelect} />
             )}
 
+            {step === "player-management" && (
+                <PlayerManagement
+                    players={players}
+                    onBack={() => setStep("player-select")}
+                    onCreatePlayer={handleCreatePlayer}
+                />
+            )}
+
             {step === "player-select" && (
                 <PlayerSelect
-                    onBack={() => setStep("game-select")}
+                    onBack={handleBackToGames}
+                    onManagePlayers={() => setStep("player-management")}
                     onStartGame={handleStartGame}
+                    selectedPlayerIds={selectedPlayerIds}
+                    onSelectedPlayerIdsChange={setSelectedPlayerIds}
+                    randomizeOrder={randomizeOrder}
+                    onRandomizeOrderChange={setRandomizeOrder}
+                    players={players}
                 />
             )}
 

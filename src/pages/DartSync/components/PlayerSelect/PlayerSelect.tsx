@@ -1,11 +1,16 @@
 import { useMemo, useState } from "react";
-import { MOCK_PLAYERS } from "../../data/mockPlayers";
 import type { Player } from "../../types/player";
 import "./PlayerSelect.less";
 
 type PlayerSelectProps = {
   onBack: () => void;
+  onManagePlayers: () => void;
   onStartGame: (players: Player[], randomize: boolean) => void;
+  selectedPlayerIds: string[];
+  onSelectedPlayerIdsChange: (playerIds: string[]) => void;
+  randomizeOrder: boolean;
+  onRandomizeOrderChange: (randomize: boolean) => void;
+  players: Player[];
 };
 
 function getInitials(name: string) {
@@ -19,37 +24,41 @@ function getInitials(name: string) {
 
 export default function PlayerSelect({
   onBack,
+  onManagePlayers,
   onStartGame,
+  selectedPlayerIds,
+  onSelectedPlayerIdsChange,
+  randomizeOrder,
+  onRandomizeOrderChange,
+  players,
 }: PlayerSelectProps) {
-  const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
-  const [randomizeOrder, setRandomizeOrder] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
   const selectedPlayers = useMemo(
     () =>
       selectedPlayerIds
-        .map((id) => MOCK_PLAYERS.find((player) => player.id === id))
+        .map((id) => players.find((player) => player.id === id))
         .filter((player): player is Player => Boolean(player)),
-    [selectedPlayerIds]
+    [players, selectedPlayerIds]
   );
 
   const filteredPlayers = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    if (!normalizedQuery) return MOCK_PLAYERS;
+    if (!normalizedQuery) return players;
 
-    return MOCK_PLAYERS.filter((player) =>
+    return players.filter((player) =>
       [player.name, player.description]
         .filter(Boolean)
         .some((value) => value!.toLowerCase().includes(normalizedQuery))
     );
-  }, [searchQuery]);
+  }, [players, searchQuery]);
 
   const togglePlayer = (playerId: string) => {
-    setSelectedPlayerIds((current) =>
-      current.includes(playerId)
-        ? current.filter((id) => id !== playerId)
-        : [...current, playerId]
+    onSelectedPlayerIdsChange(
+      selectedPlayerIds.includes(playerId)
+        ? selectedPlayerIds.filter((id) => id !== playerId)
+        : [...selectedPlayerIds, playerId]
     );
   };
 
@@ -65,12 +74,22 @@ export default function PlayerSelect({
               <span>DartSync</span>
             </div>
 
-            <button className="player-select__back" type="button" onClick={onBack}>
-              <svg viewBox="0 0 20 20" aria-hidden="true">
-                <path d="M16 10H5M9 6l-4 4 4 4" />
-              </svg>
-              Back to games
-            </button>
+            <div className="player-select__topbar-actions">
+              <button
+                className="player-select__manage"
+                type="button"
+                onClick={onManagePlayers}
+              >
+                Manage players
+              </button>
+
+              <button className="player-select__back" type="button" onClick={onBack}>
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="M16 10H5M9 6l-4 4 4 4" />
+                </svg>
+                Back to games
+              </button>
+            </div>
           </div>
 
           <div className="player-select__intro">
@@ -196,7 +215,7 @@ export default function PlayerSelect({
                   <input
                     type="checkbox"
                     checked={randomizeOrder}
-                    onChange={(event) => setRandomizeOrder(event.target.checked)}
+                    onChange={(event) => onRandomizeOrderChange(event.target.checked)}
                   />
                   <span aria-hidden="true" />
                 </span>

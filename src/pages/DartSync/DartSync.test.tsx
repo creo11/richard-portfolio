@@ -5,6 +5,88 @@ import { describe, expect, it } from "vitest";
 import DartSync from "./DartSync";
 
 describe("DartSync scoring flow", () => {
+  it("opens player management from selection and preserves setup state", async () => {
+    const user = userEvent.setup();
+
+    render(<DartSync />);
+
+    expect(screen.queryByRole("button", { name: "Manage players" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(screen.getByRole("button", { name: /Rick/ }));
+    await user.click(
+      screen.getByRole("checkbox", { name: /Randomize order/ })
+    );
+    await user.click(screen.getByRole("button", { name: "Manage players" }));
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Players" })
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("3 active players")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add player" })).toBeEnabled();
+    expect(screen.getAllByRole("button", { name: "Edit" })).toHaveLength(3);
+
+    await user.click(
+      screen.getByRole("button", { name: "Back to player selection" })
+    );
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Select players" })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Rick/ })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(
+      screen.getByRole("checkbox", { name: /Randomize order/ })
+    ).not.toBeChecked();
+  });
+
+  it("validates, creates, and cancels new players for the current session", async () => {
+    const user = userEvent.setup();
+
+    render(<DartSync />);
+
+    await user.click(screen.getByRole("button", { name: "Select game" }));
+    await user.click(screen.getByRole("button", { name: "Manage players" }));
+    await user.click(screen.getByRole("button", { name: "Add player" }));
+
+    let dialog = screen.getByRole("dialog", { name: "Add a new player" });
+    await user.click(within(dialog).getByRole("button", { name: "Create player" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Enter a player name.");
+
+    const nameInput = within(dialog).getByRole("textbox", { name: "Player name" });
+    await user.type(nameInput, "Rick");
+    await user.click(within(dialog).getByRole("button", { name: "Create player" }));
+    expect(screen.getByRole("alert")).toHaveTextContent(/already exists/i);
+
+    await user.clear(nameInput);
+    await user.type(nameInput, "Casey");
+    await user.type(
+      within(dialog).getByRole("textbox", { name: /Description/ }),
+      "Steady finisher"
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Create player" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("4 active players")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Casey" })).toBeInTheDocument();
+    expect(screen.getByText("Steady finisher")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Add player" }));
+    dialog = screen.getByRole("dialog", { name: "Add a new player" });
+    await user.type(
+      within(dialog).getByRole("textbox", { name: "Player name" }),
+      "Not saved"
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByText("Not saved")).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Back to player selection" })
+    );
+    expect(screen.getByRole("button", { name: /Casey/ })).toBeInTheDocument();
+  });
+
   it("starts a two-player game, records a mark, and undoes it", async () => {
     const user = userEvent.setup();
 
