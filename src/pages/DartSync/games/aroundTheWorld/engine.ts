@@ -46,17 +46,16 @@ function scoreTarget(
     const advancement = game.options.multiplierAdvance
         ? Math.max(1, Math.min(3, multiplier))
         : 1;
-    const nextTargetIndex = Math.min(
-        AROUND_THE_WORLD_TARGETS.length,
-        player.targetIndex + advancement
-    );
+    const bullIndex = AROUND_THE_WORLD_TARGETS.length - 1;
+    const completed = requiredTarget === "bull";
+    const nextTargetIndex = completed
+        ? AROUND_THE_WORLD_TARGETS.length
+        : Math.min(bullIndex, player.targetIndex + advancement);
     const updatedPlayers = [...game.players];
     updatedPlayers[game.activePlayerIndex] = {
         ...player,
         targetIndex: nextTargetIndex,
     };
-    const completed = nextTargetIndex >= AROUND_THE_WORLD_TARGETS.length;
-
     return {
         action,
         game: {

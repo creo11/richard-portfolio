@@ -71,8 +71,9 @@ The game card includes a **Multiplier advancement** option that defaults to on:
 - Double advances 2 targets
 - Triple advances 3 targets
 
-When the option is off, any valid hit advances exactly one target. Advancement
-is capped at completion, so a double 20 can advance through 20 and Bull to win.
+When the option is off, any valid hit advances exactly one target. Multiplier
+advancement is capped at Bull and can never skip it. Once Bull is the current
+target, the player must hit either a single or double Bull to win.
 
 Turns never advance automatically. DartSync does not record misses, so the
 scorer selects Next Player after all three darts are thrown. Undo restores the

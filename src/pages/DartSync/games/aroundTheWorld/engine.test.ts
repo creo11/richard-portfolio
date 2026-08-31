@@ -44,13 +44,38 @@ describe("Around the World engine", () => {
     expect(nextTurn.activePlayerIndex).toBe(1);
   });
 
-  it("allows a double 20 to advance through Bull and win", () => {
+  it("stops multiplier advancement at Bull instead of ending the game", () => {
     const game = aroundTheWorldEngine.createGame(players, {
       multiplierAdvance: true,
     });
     game.players[0].targetIndex = 19;
 
     const result = aroundTheWorldEngine.scoreTarget(game, 20, 2);
+
+    expect(result.game.players[0].targetIndex).toBe(20);
+    expect(result.game.phase).toBe("active");
+    expect(result.game.winnerId).toBeUndefined();
+  });
+
+  it("does not let a triple 19 skip the required Bull finish", () => {
+    const game = aroundTheWorldEngine.createGame(players, {
+      multiplierAdvance: true,
+    });
+    game.players[0].targetIndex = 18;
+
+    const result = aroundTheWorldEngine.scoreTarget(game, 19, 3);
+
+    expect(result.game.players[0].targetIndex).toBe(20);
+    expect(result.game.phase).toBe("active");
+  });
+
+  it("ends the game when the current target is hit with a double Bull", () => {
+    const game = aroundTheWorldEngine.createGame(players, {
+      multiplierAdvance: true,
+    });
+    game.players[0].targetIndex = 20;
+
+    const result = aroundTheWorldEngine.scoreTarget(game, "bull", 2);
 
     expect(result.game.phase).toBe("complete");
     expect(result.game.winnerId).toBe("rick");

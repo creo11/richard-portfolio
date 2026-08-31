@@ -59,8 +59,9 @@ export default function AroundTheWorldRules({ onClose }: GameRulesViewProps) {
             <p>
               When enabled on the game card, a single advances one target, a
               double advances two, and a triple advances three. When disabled,
-              any valid hit advances one target. Progress stops at completion,
-              so a double 20 can advance through 20 and Bull to win.
+              any valid hit advances one target. Multiplier advancement stops
+              at Bull and can never skip it. Once Bull is the current target,
+              the player must hit either a single or double Bull to win.
             </p>
           </section>
           <section>
