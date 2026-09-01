@@ -6,6 +6,13 @@ import PlayerSelect from "./components/PlayerSelect/PlayerSelect";
 import { MOCK_PLAYERS } from "./data/mockPlayers";
 import { getGameRegistration } from "./games/registry";
 import type { DartboardTarget, GameSetupOptions } from "./games/types";
+import {
+    createPlayer,
+    deletePlayer,
+    loadPlayers,
+    resetPlayerStats,
+    updatePlayer,
+} from "./persistence/playerApi";
 
 import type { Player } from "./types/player";
 
@@ -38,6 +45,8 @@ export default function DartSync() {
     const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
     const [randomizeOrder, setRandomizeOrder] = useState(true);
     const [players, setPlayers] = useState<Player[]>(() => [...MOCK_PLAYERS]);
+    const [playerPersistenceStatus, setPlayerPersistenceStatus] =
+        useState<"loading" | "ready" | "fallback">("loading");
     const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
     const [selectedGameOptions, setSelectedGameOptions] =
         useState<GameSetupOptions>({});
@@ -75,6 +84,25 @@ export default function DartSync() {
 
             manifest.remove();
         };
+    }, []);
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        loadPlayers(controller.signal)
+            .then((savedPlayers) => {
+                setPlayers(savedPlayers);
+                setPlayerPersistenceStatus("ready");
+            })
+            .catch((error: unknown) => {
+                if (error instanceof DOMException && error.name === "AbortError") {
+                    return;
+                }
+
+                setPlayerPersistenceStatus("fallback");
+            });
+
+        return () => controller.abort();
     }, []);
 
     const handleGameSelect = (
@@ -184,44 +212,41 @@ export default function DartSync() {
         setStep("game-select");
     };
 
-    const handleCreatePlayer = (name: string, description?: string) => {
-        setPlayers((currentPlayers) => [
-            ...currentPlayers,
-            {
-                id: crypto.randomUUID(),
-                name,
-                description,
-                wins: 0,
-                gamesPlayed: 0,
-            },
-        ]);
+    const handleCreatePlayer = async (name: string, description: string | undefined, turnstileToken: string) => {
+        const player = await createPlayer(name, description, turnstileToken);
+        setPlayers((currentPlayers) => [...currentPlayers, player]);
+        setPlayerPersistenceStatus("ready");
     };
 
-    const handleUpdatePlayer = (
+    const handleUpdatePlayer = async (
         playerId: string,
         name: string,
-        description?: string
+        description: string | undefined,
+        turnstileToken: string
     ) => {
+        const updatedPlayer = await updatePlayer(playerId, name, description, turnstileToken);
         setPlayers((currentPlayers) =>
             currentPlayers.map((player) =>
                 player.id === playerId
-                    ? { ...player, name, description }
+                    ? updatedPlayer
                     : player
             )
         );
     };
 
-    const handleResetPlayerStats = (playerId: string) => {
+    const handleResetPlayerStats = async (playerId: string, turnstileToken: string) => {
+        const resetPlayer = await resetPlayerStats(playerId, turnstileToken);
         setPlayers((currentPlayers) =>
             currentPlayers.map((player) =>
                 player.id === playerId
-                    ? { ...player, wins: 0, gamesPlayed: 0 }
+                    ? resetPlayer
                     : player
             )
         );
     };
 
-    const handleDeletePlayer = (playerId: string) => {
+    const handleDeletePlayer = async (playerId: string, turnstileToken: string) => {
+        await deletePlayer(playerId, turnstileToken);
         setPlayers((currentPlayers) =>
             currentPlayers.filter((player) => player.id !== playerId)
         );
@@ -249,6 +274,7 @@ export default function DartSync() {
                     onUpdatePlayer={handleUpdatePlayer}
                     onResetPlayerStats={handleResetPlayerStats}
                     onDeletePlayer={handleDeletePlayer}
+                    persistenceStatus={playerPersistenceStatus}
                 />
             )}
 

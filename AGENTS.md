@@ -320,6 +320,19 @@ The application should survive browser refreshes and future sessions.
 
 Do not allow deleting a player to destroy historical game integrity.
 
+## D1 Persistence Foundation
+
+The initial versioned D1 schema lives in:
+
+`migrations/0001_dartsync_initial_schema.sql`
+
+It defines players, games, game participants, and per-player game results.
+Player deletion is modeled as a `deleted_at` soft deletion, while
+`stats_reset_at` allows statistics to reset without deleting game history.
+Participant and result rows preserve player-name snapshots so later renames do
+not rewrite historical records. Wins and games played should be derived from
+completed game results rather than stored as mutable counters on players.
+
 ---
 
 # Statistics — Planned

@@ -1,0 +1,40 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "richard-portfolio",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-06-01",
+  "vars": {
+    "TURNSTILE_HOSTNAMES": "rickgutz.com,www.rickgutz.com"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dartsync-preview",
+      "database_id": "0e804306-879a-40c1-bbfa-269f1819ffad",
+      "preview_database_id": "DB",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  "env": {
+    "preview": {
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "dartsync-preview",
+          "database_id": "0e804306-879a-40c1-bbfa-269f1819ffad",
+          "migrations_dir": "./migrations"
+        }
+      ]
+    },
+    "production": {
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "dartsync-production",
+          "database_id": "9123c11b-c648-422d-af19-720e60d91a7c",
+          "migrations_dir": "./migrations"
+        }
+      ]
+    }
+  }
+}

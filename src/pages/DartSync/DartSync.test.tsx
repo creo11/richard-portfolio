@@ -1,8 +1,67 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import DartSync from "./DartSync";
+import { MOCK_PLAYERS } from "./data/mockPlayers";
+
+beforeEach(() => {
+  let verificationCallback: ((token: string) => void) | undefined;
+
+  window.turnstile = {
+    render: vi.fn((_container, options) => {
+      verificationCallback = options.callback;
+      return "dartsync-test-widget";
+    }),
+    execute: vi.fn(() => verificationCallback?.("test-turnstile-token")),
+    remove: vi.fn(),
+  };
+
+  vi.stubGlobal("fetch", vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+    if (init?.method === "DELETE") {
+      return new Response(null, { status: 204 });
+    }
+
+    if (init?.method === "POST" && String(_input).endsWith("/reset-stats")) {
+      const playerId = String(_input).split("/").at(-2);
+      const existingPlayer = MOCK_PLAYERS.find(({ id }) => id === playerId);
+
+      return Response.json({
+        player: {
+          ...existingPlayer,
+          wins: 0,
+          gamesPlayed: 0,
+          lastWinner: false,
+        },
+      });
+    }
+
+    if (init?.method === "POST" || init?.method === "PATCH") {
+      const input = JSON.parse(String(init.body)) as {
+        name: string;
+        description?: string;
+      };
+      const playerId = init.method === "PATCH"
+        ? String(_input).split("/").at(-1)
+        : "player-created";
+      const existingPlayer = MOCK_PLAYERS.find(({ id }) => id === playerId);
+
+      return Response.json({
+        player: {
+          ...existingPlayer,
+          id: playerId,
+          name: input.name,
+          description: input.description,
+          wins: existingPlayer?.wins ?? 0,
+          gamesPlayed: existingPlayer?.gamesPlayed ?? 0,
+          lastWinner: false,
+        },
+      }, { status: 201 });
+    }
+
+    return Response.json({ players: MOCK_PLAYERS });
+  }));
+});
 
 function getGameAction(gameName: string, actionName: string) {
   const heading = screen.getByRole("heading", { level: 2, name: gameName });
@@ -167,7 +226,7 @@ describe("DartSync scoring flow", () => {
     ).not.toBeChecked();
   });
 
-  it("validates, creates, and cancels new players for the current session", async () => {
+  it("validates, persists, and cancels new players", async () => {
     const user = userEvent.setup();
 
     render(<DartSync />);
@@ -197,6 +256,10 @@ describe("DartSync scoring flow", () => {
     expect(screen.getByLabelText("4 active players")).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Casey" })).toBeInTheDocument();
     expect(screen.getByText("Steady finisher")).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/dartsync/players",
+      expect.objectContaining({ method: "POST" })
+    );
 
     await user.click(screen.getByRole("button", { name: "Add player" }));
     dialog = screen.getByRole("dialog", { name: "Add a new player" });
@@ -341,7 +404,7 @@ describe("DartSync scoring flow", () => {
     );
 
     let dialog = screen.getByRole("dialog", { name: "Delete Rick?" });
-    expect(within(dialog).getByText(/persistent game history/i)).toBeInTheDocument();
+    expect(within(dialog).getByText(/game history and results will remain intact/i)).toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
     expect(screen.getByRole("heading", { level: 2, name: "Rick" })).toBeInTheDocument();
 

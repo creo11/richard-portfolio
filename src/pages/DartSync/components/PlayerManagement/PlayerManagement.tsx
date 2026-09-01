@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import type { Player } from "../../types/player";
+import { requestTurnstileToken, type TurnstileAction } from "../../turnstile";
 import "./PlayerManagement.less";
 
 type PlayerManagementProps = {
   players: Player[];
+  persistenceStatus: "loading" | "ready" | "fallback";
   onBack: () => void;
-  onCreatePlayer: (name: string, description?: string) => void;
-  onUpdatePlayer: (playerId: string, name: string, description?: string) => void;
-  onResetPlayerStats: (playerId: string) => void;
-  onDeletePlayer: (playerId: string) => void;
+  onCreatePlayer: (name: string, description: string | undefined, turnstileToken: string) => Promise<void>;
+  onUpdatePlayer: (playerId: string, name: string, description: string | undefined, turnstileToken: string) => Promise<void>;
+  onResetPlayerStats: (playerId: string, turnstileToken: string) => Promise<void>;
+  onDeletePlayer: (playerId: string, turnstileToken: string) => Promise<void>;
 };
 
 function getInitials(name: string) {
@@ -23,6 +25,7 @@ function getInitials(name: string) {
 
 export default function PlayerManagement({
   players,
+  persistenceStatus,
   onBack,
   onCreatePlayer,
   onUpdatePlayer,
@@ -34,11 +37,37 @@ export default function PlayerManagement({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [resetPlayerId, setResetPlayerId] = useState<string | null>(null);
+  const [resetError, setResetError] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
   const [deletePlayerId, setDeletePlayerId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const turnstileContainerRef = useRef<HTMLDivElement>(null);
   const resetPlayer = players.find((player) => player.id === resetPlayerId);
   const deletePlayer = players.find((player) => player.id === deletePlayerId);
+
+  const runProtectedAction = async <T,>(
+    action: TurnstileAction,
+    operation: (turnstileToken: string) => Promise<T>,
+  ): Promise<T> => {
+    if (!turnstileContainerRef.current) {
+      throw new Error("Cloudflare verification is unavailable. Please try again.");
+    }
+
+    const verification = await requestTurnstileToken(
+      turnstileContainerRef.current,
+      action,
+    );
+
+    try {
+      return await operation(verification.token);
+    } finally {
+      verification.release();
+    }
+  };
 
   useEffect(() => {
     if (!formMode) return;
@@ -90,7 +119,7 @@ export default function PlayerManagement({
     setFormMode("edit");
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmedName = name.trim();
     const trimmedDescription = description.trim();
@@ -110,11 +139,46 @@ export default function PlayerManagement({
     }
 
     if (formMode === "edit" && editingPlayerId) {
-      onUpdatePlayer(editingPlayerId, trimmedName, trimmedDescription || undefined);
+      setIsSubmitting(true);
+
+      try {
+        await runProtectedAction("player_update", (turnstileToken) => onUpdatePlayer(
+          editingPlayerId,
+          trimmedName,
+          trimmedDescription || undefined,
+          turnstileToken,
+        )
+        );
+      } catch (submitError) {
+        setError(
+          submitError instanceof Error
+            ? submitError.message
+            : "DartSync could not save the player."
+        );
+        setIsSubmitting(false);
+        return;
+      }
     } else {
-      onCreatePlayer(trimmedName, trimmedDescription || undefined);
+      setIsSubmitting(true);
+
+      try {
+        await runProtectedAction("player_create", (turnstileToken) => onCreatePlayer(
+          trimmedName,
+          trimmedDescription || undefined,
+          turnstileToken,
+        ));
+      } catch (submitError) {
+        setError(
+          submitError instanceof Error
+            ? submitError.message
+            : "DartSync could not save the player."
+        );
+        setIsSubmitting(false);
+        return;
+      }
     }
 
+    setIsSubmitting(false);
     setFormMode(null);
   };
 
@@ -161,7 +225,12 @@ export default function PlayerManagement({
           >
             <strong>{players.length}</strong>
             <span>active players</span>
-            <small>Players are stored for this session until persistence is connected.</small>
+            <small role="status">
+              {persistenceStatus === "loading" && "Loading saved players…"}
+              {persistenceStatus === "ready" && "Players are saved to DartSync."}
+              {persistenceStatus === "fallback" &&
+                "Using starter players because saved players could not be loaded."}
+            </small>
           </div>
 
           <div className="player-management__grid">
@@ -193,13 +262,22 @@ export default function PlayerManagement({
 
                   <div className="managed-player__actions" aria-label={`${player.name} actions`}>
                     <button type="button" onClick={() => openEditPlayer(player)}>Edit</button>
-                    <button type="button" onClick={() => setResetPlayerId(player.id)}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResetError("");
+                        setResetPlayerId(player.id);
+                      }}
+                    >
                       Reset stats
                     </button>
                     <button
                       type="button"
                       className="managed-player__delete"
-                      onClick={() => setDeletePlayerId(player.id)}
+                      onClick={() => {
+                        setDeleteError("");
+                        setDeletePlayerId(player.id);
+                      }}
                     >
                       Delete
                     </button>
@@ -266,9 +344,11 @@ export default function PlayerManagement({
             </div>
 
             <footer>
-              <button type="button" onClick={() => setFormMode(null)}>Cancel</button>
-              <button type="submit" className="player-form-modal__submit">
-                {formMode === "edit" ? "Save changes" : "Create player"}
+              <button type="button" disabled={isSubmitting} onClick={() => setFormMode(null)}>Cancel</button>
+              <button type="submit" disabled={isSubmitting} className="player-form-modal__submit">
+                {isSubmitting
+                  ? "Saving…"
+                  : formMode === "edit" ? "Save changes" : "Create player"}
               </button>
             </footer>
           </form>
@@ -290,19 +370,46 @@ export default function PlayerManagement({
               Wins and games played will return to zero. The player will remain available.
             </p>
 
+            {resetError && (
+              <p className="player-form-modal__error" role="alert">
+                {resetError}
+              </p>
+            )}
+
             <div className="player-confirm-modal__actions">
-              <button type="button" autoFocus onClick={() => setResetPlayerId(null)}>
+              <button
+                type="button"
+                autoFocus
+                disabled={isResetting}
+                onClick={() => setResetPlayerId(null)}
+              >
                 Cancel
               </button>
               <button
                 type="button"
+                disabled={isResetting}
                 className="player-confirm-modal__confirm"
-                onClick={() => {
-                  onResetPlayerStats(resetPlayer.id);
-                  setResetPlayerId(null);
+                onClick={async () => {
+                  setResetError("");
+                  setIsResetting(true);
+
+                  try {
+                    await runProtectedAction("player_reset", (turnstileToken) => (
+                      onResetPlayerStats(resetPlayer.id, turnstileToken)
+                    ));
+                    setResetPlayerId(null);
+                  } catch (submitError) {
+                    setResetError(
+                      submitError instanceof Error
+                        ? submitError.message
+                        : "DartSync could not reset the player's statistics."
+                    );
+                  } finally {
+                    setIsResetting(false);
+                  }
                 }}
               >
-                Reset stats
+                {isResetting ? "Resetting…" : "Reset stats"}
               </button>
             </div>
           </section>
@@ -324,27 +431,60 @@ export default function PlayerManagement({
             <h2 id="delete-player-title">Delete {deletePlayer.name}?</h2>
             <p id="delete-player-description">
               This removes the player from the active list and current game setup.
-              Future persistent game history will retain its own player records.
+              Existing game history and results will remain intact.
             </p>
 
+            {deleteError && (
+              <p className="player-form-modal__error" role="alert">
+                {deleteError}
+              </p>
+            )}
+
             <div className="player-confirm-modal__actions">
-              <button type="button" autoFocus onClick={() => setDeletePlayerId(null)}>
+              <button
+                type="button"
+                autoFocus
+                disabled={isDeleting}
+                onClick={() => setDeletePlayerId(null)}
+              >
                 Cancel
               </button>
               <button
                 type="button"
+                disabled={isDeleting}
                 className="player-confirm-modal__confirm player-confirm-modal__confirm--danger"
-                onClick={() => {
-                  onDeletePlayer(deletePlayer.id);
-                  setDeletePlayerId(null);
+                onClick={async () => {
+                  setDeleteError("");
+                  setIsDeleting(true);
+
+                  try {
+                    await runProtectedAction("player_delete", (turnstileToken) => (
+                      onDeletePlayer(deletePlayer.id, turnstileToken)
+                    ));
+                    setDeletePlayerId(null);
+                  } catch (submitError) {
+                    setDeleteError(
+                      submitError instanceof Error
+                        ? submitError.message
+                        : "DartSync could not delete the player."
+                    );
+                  } finally {
+                    setIsDeleting(false);
+                  }
                 }}
               >
-                Delete player
+                {isDeleting ? "Deleting…" : "Delete player"}
               </button>
             </div>
           </section>
         </div>
       )}
+
+      <div
+        ref={turnstileContainerRef}
+        className="player-management__turnstile"
+        aria-live="polite"
+      />
     </div>
   );
 }
