@@ -27,6 +27,9 @@
       ]
     },
     "production": {
+      "vars": {
+        "TURNSTILE_HOSTNAMES": "rickgutz.com,www.rickgutz.com"
+      },
       "d1_databases": [
         {
           "binding": "DB",
