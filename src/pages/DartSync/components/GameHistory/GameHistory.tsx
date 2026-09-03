@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getGameRegistration } from "../../games/registry";
 import {
   loadPersistedGameHistory,
@@ -25,9 +25,25 @@ export default function GameHistory({ onBack }: GameHistoryProps) {
   const [error, setError] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [selectedGame, setSelectedGame] = useState<PersistedGameHistoryItem | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [gameTypeFilter, setGameTypeFilter] = useState("all");
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState("");
   const turnstileContainerRef = useRef<HTMLDivElement>(null);
 
   const retry = useCallback(() => setLoadAttempt((attempt) => attempt + 1), []);
+  const filteredGames = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return games.filter((game) => {
+      const matchesType = gameTypeFilter === "all" || game.gameType === gameTypeFilter;
+      const matchesSearch = !query || game.participants.some((participant) =>
+        participant.playerName.toLowerCase().includes(query)
+      );
+      return matchesType && matchesSearch;
+    });
+  }, [gameTypeFilter, games, searchQuery]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -46,13 +62,14 @@ export default function GameHistory({ onBack }: GameHistoryProps) {
           "game_history"
         );
         releaseVerification = verification.release;
-        const history = await loadPersistedGameHistory(
+        const page = await loadPersistedGameHistory(
           verification.token,
           controller.signal
         );
 
         if (active) {
-          setGames(history);
+          setGames(page.games);
+          setNextCursor(page.nextCursor);
           setStatus("ready");
         }
       } catch (loadError) {
@@ -77,6 +94,38 @@ export default function GameHistory({ onBack }: GameHistoryProps) {
       releaseVerification();
     };
   }, [loadAttempt]);
+
+  const loadMore = async () => {
+    if (!nextCursor || !turnstileContainerRef.current || isLoadingMore) return;
+
+    setIsLoadingMore(true);
+    setLoadMoreError("");
+    let releaseVerification = () => {};
+
+    try {
+      const verification = await requestTurnstileToken(
+        turnstileContainerRef.current,
+        "game_history"
+      );
+      releaseVerification = verification.release;
+      const page = await loadPersistedGameHistory(
+        verification.token,
+        undefined,
+        nextCursor
+      );
+      setGames((currentGames) => [...currentGames, ...page.games]);
+      setNextCursor(page.nextCursor);
+    } catch (loadError) {
+      setLoadMoreError(
+        loadError instanceof Error
+          ? loadError.message
+          : "DartSync could not load more game history."
+      );
+    } finally {
+      releaseVerification();
+      setIsLoadingMore(false);
+    }
+  };
 
   return (
     <div className="game-history">
@@ -131,8 +180,40 @@ export default function GameHistory({ onBack }: GameHistoryProps) {
           )}
 
           {status === "ready" && games.length > 0 && (
-            <div className="game-history__list" aria-label={`${games.length} completed games`}>
-              {games.map((game) => {
+            <>
+              <div className="game-history__filters">
+                <label className="game-history__search">
+                  <span>Search by player</span>
+                  <input
+                    type="search"
+                    value={searchQuery}
+                    placeholder="Search player names"
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                  />
+                </label>
+                <label className="game-history__filter">
+                  <span>Game type</span>
+                  <select
+                    value={gameTypeFilter}
+                    onChange={(event) => setGameTypeFilter(event.target.value)}
+                  >
+                    <option value="all">All games</option>
+                    <option value="house-cricket">Rick&apos;s House Rules Cricket</option>
+                    <option value="around-the-world">Around the World</option>
+                  </select>
+                </label>
+              </div>
+
+              {filteredGames.length === 0 && (
+                <div className="game-history__message">
+                  <strong>No matching games</strong>
+                  <p>Try a different player name or game type.</p>
+                </div>
+              )}
+
+              {filteredGames.length > 0 && (
+            <div className="game-history__list" aria-label={`${filteredGames.length} completed games`}>
+              {filteredGames.map((game) => {
                 const gameName = getGameRegistration(game.gameType)?.name ?? game.gameType;
                 const winner = game.participants.find((participant) => participant.isWinner);
 
@@ -177,6 +258,21 @@ export default function GameHistory({ onBack }: GameHistoryProps) {
                 );
               })}
             </div>
+              )}
+              {loadMoreError && (
+                <p className="game-history__load-error" role="alert">{loadMoreError}</p>
+              )}
+              {nextCursor && (
+                <button
+                  type="button"
+                  className="game-history__load-more"
+                  disabled={isLoadingMore}
+                  onClick={() => void loadMore()}
+                >
+                  {isLoadingMore ? "Loading more…" : "Load More"}
+                </button>
+              )}
+            </>
           )}
         </div>
       </main>

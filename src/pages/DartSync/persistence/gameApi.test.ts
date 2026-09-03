@@ -136,9 +136,12 @@ describe('DartSync game API client', () => {
         },
       ],
     }]
-    vi.mocked(fetch).mockResolvedValue(Response.json({ games }))
+    vi.mocked(fetch).mockResolvedValue(Response.json({ games, nextCursor: '20' }))
 
-    await expect(loadPersistedGameHistory('history-token')).resolves.toEqual(games)
+    await expect(loadPersistedGameHistory('history-token')).resolves.toEqual({
+      games,
+      nextCursor: '20',
+    })
     expect(fetch).toHaveBeenCalledWith('/api/dartsync/games', {
       headers: {
         Accept: 'application/json',
@@ -158,6 +161,20 @@ describe('DartSync game API client', () => {
       .rejects.toThrow('History is temporarily unavailable.')
   })
 
+  it('loads the next history page using its cursor', async () => {
+    vi.mocked(fetch).mockResolvedValue(Response.json({ games: [], nextCursor: null }))
+
+    await expect(loadPersistedGameHistory('history-token', undefined, '20'))
+      .resolves.toEqual({ games: [], nextCursor: null })
+    expect(fetch).toHaveBeenCalledWith('/api/dartsync/games?cursor=20', {
+      headers: {
+        Accept: 'application/json',
+        'X-Turnstile-Token': 'history-token',
+      },
+      signal: undefined,
+    })
+  })
+
   it('rejects malformed game history responses', async () => {
     vi.mocked(fetch).mockResolvedValue(Response.json({
       games: [{
@@ -168,6 +185,7 @@ describe('DartSync game API client', () => {
         completedAt: '2026-09-02T01:05:00.000Z',
         participants: [{ playerId: 'rick', isWinner: true }],
       }],
+      nextCursor: null,
     }))
 
     await expect(loadPersistedGameHistory('history-token'))

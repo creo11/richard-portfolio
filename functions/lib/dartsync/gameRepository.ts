@@ -51,6 +51,11 @@ export type CompletedGameHistoryItem = {
   participants: CompletedGameHistoryParticipant[]
 }
 
+export type CompletedGameHistoryPage = {
+  games: CompletedGameHistoryItem[]
+  hasMore: boolean
+}
+
 export class GameNotFoundError extends Error {
   constructor() {
     super('Game not found.')
@@ -301,8 +306,9 @@ export async function abandonGame(
 
 export async function listCompletedGames(
   database: GameDatabase,
-  limit = 50,
-): Promise<CompletedGameHistoryItem[]> {
+  limit = 20,
+  offset = 0,
+): Promise<CompletedGameHistoryPage> {
   const result = await database
     .prepare(`
       WITH recent_games AS (
@@ -310,7 +316,7 @@ export async function listCompletedGames(
         FROM games
         WHERE status = 'completed'
         ORDER BY completed_at DESC, id DESC
-        LIMIT ?1
+        LIMIT ?1 OFFSET ?2
       )
       SELECT
         recent_games.id AS game_id,
@@ -331,7 +337,7 @@ export async function listCompletedGames(
         AND game_results.player_id = game_players.player_id
       ORDER BY recent_games.completed_at DESC, recent_games.id DESC, game_players.turn_order ASC
     `)
-    .bind(limit)
+    .bind(limit + 1, offset)
     .all<CompletedGameHistoryRow>()
 
   const games = new Map<string, CompletedGameHistoryItem>()
@@ -360,5 +366,9 @@ export async function listCompletedGames(
     })
   })
 
-  return [...games.values()]
+  const gameList = [...games.values()]
+  return {
+    games: gameList.slice(0, limit),
+    hasMore: gameList.length > limit,
+  }
 }

@@ -319,7 +319,10 @@ describe('GET /api/dartsync/games', () => {
       'game-1',
     )
 
-    const response = await handleListGames(database)
+    const response = await handleListGames(
+      new Request('http://localhost/api/dartsync/games'),
+      database,
+    )
 
     expect(response.status).toBe(200)
     expect(response.headers.get('Cache-Control')).toBe('no-store')
@@ -333,6 +336,18 @@ describe('GET /api/dartsync/games', () => {
           { playerId: 'jaie', playerName: 'Jaie', isWinner: false, placement: 2 },
         ],
       }],
+      nextCursor: null,
     })
+  })
+
+  it('rejects an invalid history cursor', async () => {
+    const { database } = createDatabase()
+
+    const response = await handleListGames(
+      new Request('http://localhost/api/dartsync/games?cursor=invalid'),
+      database,
+    )
+
+    expect(response.status).toBe(400)
   })
 })

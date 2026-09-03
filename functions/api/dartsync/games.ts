@@ -74,10 +74,32 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   return handleStartGame(request, env.DB)
 }
 
-export async function handleListGames(database: GameDatabase): Promise<Response> {
+const HISTORY_PAGE_SIZE = 20
+
+function parseHistoryOffset(request: Request): number | null {
+  const cursor = new URL(request.url).searchParams.get('cursor')
+  if (cursor === null) return 0
+  if (!/^\d+$/.test(cursor)) return null
+
+  const offset = Number(cursor)
+  return Number.isSafeInteger(offset) ? offset : null
+}
+
+export async function handleListGames(
+  request: Request,
+  database: GameDatabase,
+): Promise<Response> {
+  const offset = parseHistoryOffset(request)
+  if (offset === null) {
+    return jsonResponse({ error: 'History cursor is invalid.' }, 400)
+  }
+
   try {
-    const games = await listCompletedGames(database)
-    return jsonResponse({ games }, 200)
+    const page = await listCompletedGames(database, HISTORY_PAGE_SIZE, offset)
+    return jsonResponse({
+      games: page.games,
+      nextCursor: page.hasMore ? String(offset + HISTORY_PAGE_SIZE) : null,
+    }, 200)
   } catch (error) {
     console.error(JSON.stringify({
       event: 'dartsync.games.list_failed',
@@ -92,5 +114,5 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     return turnstileForbiddenResponse()
   }
 
-  return handleListGames(env.DB)
+  return handleListGames(request, env.DB)
 }

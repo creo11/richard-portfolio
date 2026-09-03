@@ -35,6 +35,11 @@ export type PersistedGameHistoryItem = {
   participants: PersistedGameHistoryParticipant[]
 }
 
+export type PersistedGameHistoryPage = {
+  games: PersistedGameHistoryItem[]
+  nextCursor: string | null
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
@@ -163,8 +168,12 @@ export async function abandonPersistedGame(
 export async function loadPersistedGameHistory(
   turnstileToken: string,
   signal?: AbortSignal,
-): Promise<PersistedGameHistoryItem[]> {
-  const response = await fetch(GAMES_ENDPOINT, {
+  cursor?: string,
+): Promise<PersistedGameHistoryPage> {
+  const endpoint = cursor
+    ? `${GAMES_ENDPOINT}?cursor=${encodeURIComponent(cursor)}`
+    : GAMES_ENDPOINT
+  const response = await fetch(endpoint, {
     headers: {
       Accept: 'application/json',
       [TURNSTILE_TOKEN_HEADER]: turnstileToken,
@@ -176,10 +185,17 @@ export async function loadPersistedGameHistory(
     throw new Error(await getErrorMessage(response, 'DartSync could not load game history.'))
   }
 
-  const body = await response.json() as { games?: unknown }
-  if (!Array.isArray(body.games) || !body.games.every(isHistoryItem)) {
+  const body = await response.json() as { games?: unknown; nextCursor?: unknown }
+  if (
+    !Array.isArray(body.games)
+    || !body.games.every(isHistoryItem)
+    || (body.nextCursor !== null && typeof body.nextCursor !== 'string')
+  ) {
     throw new Error('DartSync received an invalid game history response.')
   }
 
-  return body.games
+  return {
+    games: body.games,
+    nextCursor: body.nextCursor,
+  }
 }

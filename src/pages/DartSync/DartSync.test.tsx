@@ -45,6 +45,7 @@ beforeEach(() => {
             },
           ],
         }],
+        nextCursor: null,
       });
     }
 
@@ -134,8 +135,8 @@ describe("DartSync scoring flow", () => {
     expect(
       await screen.findByRole("heading", { level: 2, name: "Rick" })
     ).toBeInTheDocument();
-    expect(screen.getByText("Around the World")).toBeInTheDocument();
-    expect(screen.getByLabelText("1 completed games")).toBeInTheDocument();
+    const historyList = screen.getByLabelText("1 completed games");
+    expect(within(historyList).getByText("Around the World")).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith("/api/dartsync/games", {
       headers: {
         Accept: "application/json",
@@ -153,6 +154,22 @@ describe("DartSync scoring flow", () => {
 
     await user.click(screen.getByRole("button", { name: "Close game details" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    const historySearch = screen.getByRole("searchbox", { name: "Search by player" });
+    await user.type(historySearch, "Enrique");
+    expect(screen.getByText("No matching games")).toBeInTheDocument();
+    await user.clear(historySearch);
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Game type" }),
+      "house-cricket"
+    );
+    expect(screen.getByText("No matching games")).toBeInTheDocument();
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Game type" }),
+      "around-the-world"
+    );
+    expect(screen.getByLabelText("1 completed games")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Back to games" }));
     expect(

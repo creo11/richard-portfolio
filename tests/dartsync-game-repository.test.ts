@@ -323,7 +323,8 @@ describe('DartSync game repository', () => {
     })
     await abandonGame(database, 'game-3')
 
-    await expect(listCompletedGames(database)).resolves.toEqual([
+    await expect(listCompletedGames(database)).resolves.toEqual({
+      games: [
       {
         id: 'game-2',
         gameType: 'house-cricket',
@@ -374,6 +375,17 @@ describe('DartSync game repository', () => {
           },
         ],
       },
-    ])
+      ],
+      hasMore: false,
+    })
+
+    await expect(listCompletedGames(database, 1, 0)).resolves.toMatchObject({
+      games: [{ id: 'game-2' }],
+      hasMore: true,
+    })
+    await expect(listCompletedGames(database, 1, 1)).resolves.toMatchObject({
+      games: [{ id: 'game-1' }],
+      hasMore: false,
+    })
   })
 })
