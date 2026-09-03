@@ -125,6 +125,14 @@ it('returns reset-aware lifetime and per-game statistics for active players', as
         losses: 1,
         otherWinnerResults: 0,
         winPercentage: 0,
+        byGameType: [{
+          gameType: 'around-the-world',
+          gamesPlayed: 1,
+          wins: 0,
+          losses: 1,
+          otherWinnerResults: 0,
+          winPercentage: 0,
+        }],
       },
       {
         playerId: 'jaie',
@@ -136,6 +144,24 @@ it('returns reset-aware lifetime and per-game statistics for active players', as
         losses: 1,
         otherWinnerResults: 0,
         winPercentage: 50,
+        byGameType: [
+          {
+            gameType: 'around-the-world',
+            gamesPlayed: 1,
+            wins: 1,
+            losses: 0,
+            otherWinnerResults: 0,
+            winPercentage: 100,
+          },
+          {
+            gameType: 'house-cricket',
+            gamesPlayed: 1,
+            wins: 0,
+            losses: 1,
+            otherWinnerResults: 0,
+            winPercentage: 0,
+          },
+        ],
       },
     ],
   })
@@ -175,6 +201,14 @@ it('retains deleted opponents and distinguishes a third-party winner', async () 
     losses: 0,
     otherWinnerResults: 1,
     winPercentage: 0,
+    byGameType: [{
+      gameType: 'house-cricket',
+      gamesPlayed: 1,
+      wins: 0,
+      losses: 0,
+      otherWinnerResults: 1,
+      winPercentage: 0,
+    }],
   })
   expect(body.headToHead).toContainEqual(expect.objectContaining({
     playerId: 'rick',

@@ -116,6 +116,32 @@
     gap: 18px;
   }
 
+  &__filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+
+    button {
+      flex: 0 0 auto;
+      padding: 9px 13px;
+      border: 1px solid var(--dartsync-border);
+      border-radius: 8px;
+      background: var(--dartsync-panel);
+      color: var(--dartsync-text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+
+      &[aria-pressed="true"] {
+        border-color: rgba(41, 182, 216, 0.55);
+        background: var(--dartsync-accent-soft);
+        color: #79d9ef;
+      }
+    }
+  }
+
   &__card,
   &__message {
     border: 1px solid var(--dartsync-border);

@@ -32,6 +32,14 @@ describe('DartSync statistics API client', () => {
       losses: 1,
       otherWinnerResults: 1,
       winPercentage: 50,
+      byGameType: [{
+        gameType: 'around-the-world',
+        gamesPlayed: 4,
+        wins: 2,
+        losses: 1,
+        otherWinnerResults: 1,
+        winPercentage: 50,
+      }],
     }]
     vi.mocked(fetch).mockResolvedValue(Response.json({ players, headToHead }))
 
@@ -91,6 +99,7 @@ describe('DartSync statistics API client', () => {
       headToHead: [{
         playerId: 'rick', playerName: 'Rick', opponentId: 'jaie', opponentName: 'Jaie',
         gamesPlayed: 3, wins: 2, losses: 1, otherWinnerResults: 1, winPercentage: 67,
+        byGameType: [],
       }],
     }))
 

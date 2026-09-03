@@ -29,6 +29,16 @@ export type HeadToHeadStatistics = {
   losses: number
   otherWinnerResults: number
   winPercentage: number
+  byGameType: HeadToHeadGameTypeStatistics[]
+}
+
+export type HeadToHeadGameTypeStatistics = {
+  gameType: string
+  gamesPlayed: number
+  wins: number
+  losses: number
+  otherWinnerResults: number
+  winPercentage: number
 }
 
 export type PlayerStatisticsDashboard = {
@@ -81,6 +91,19 @@ function isHeadToHeadStatistics(value: unknown): value is HeadToHeadStatistics {
     && typeof value.playerName === 'string'
     && typeof value.opponentId === 'string'
     && typeof value.opponentName === 'string'
+    && isNonNegativeInteger(value.gamesPlayed)
+    && isNonNegativeInteger(value.wins)
+    && isNonNegativeInteger(value.losses)
+    && isNonNegativeInteger(value.otherWinnerResults)
+    && value.wins + value.losses + value.otherWinnerResults === value.gamesPlayed
+    && isPercentage(value.winPercentage)
+    && Array.isArray(value.byGameType)
+    && value.byGameType.every(isHeadToHeadGameTypeStatistics)
+}
+
+function isHeadToHeadGameTypeStatistics(value: unknown): value is HeadToHeadGameTypeStatistics {
+  return isRecord(value)
+    && typeof value.gameType === 'string'
     && isNonNegativeInteger(value.gamesPlayed)
     && isNonNegativeInteger(value.wins)
     && isNonNegativeInteger(value.losses)

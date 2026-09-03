@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getGameRegistration } from "../../games/registry";
+import { GAME_REGISTRY, getGameRegistration, type GameId } from "../../games/registry";
 import {
   loadPlayerStatistics,
   type HeadToHeadStatistics,
@@ -12,9 +12,12 @@ type PlayerStatisticsProps = {
   onBack: () => void;
 };
 
+type StatisticsFilter = "all" | GameId;
+
 export default function PlayerStatistics({ onBack }: PlayerStatisticsProps) {
   const [players, setPlayers] = useState<PlayerStatisticsRecord[]>([]);
   const [headToHead, setHeadToHead] = useState<HeadToHeadStatistics[]>([]);
+  const [gameFilter, setGameFilter] = useState<StatisticsFilter>("all");
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -124,9 +127,46 @@ export default function PlayerStatistics({ onBack }: PlayerStatisticsProps) {
           )}
 
           {status === "ready" && players.length > 0 && (
+            <>
+            <div className="player-statistics__filters" role="group" aria-label="Filter statistics by game">
+              <button
+                type="button"
+                aria-pressed={gameFilter === "all"}
+                onClick={() => setGameFilter("all")}
+              >
+                All games
+              </button>
+              {(Object.values(GAME_REGISTRY)).map((game) => (
+                <button
+                  type="button"
+                  aria-pressed={gameFilter === game.id}
+                  key={game.id}
+                  onClick={() => setGameFilter(game.id as GameId)}
+                >
+                  {game.name}
+                </button>
+              ))}
+            </div>
+
             <div className="player-statistics__grid" aria-label={`${players.length} player statistics`}>
               {players.map((player) => {
-                const matchups = headToHead.filter((record) => record.playerId === player.playerId);
+                const filteredPlayer = gameFilter === "all"
+                  ? player
+                  : player.byGameType.find((game) => game.gameType === gameFilter);
+                const playerTotals = filteredPlayer ?? {
+                  gamesPlayed: 0,
+                  wins: 0,
+                  losses: 0,
+                  winPercentage: 0,
+                };
+                const matchups = headToHead
+                  .filter((record) => record.playerId === player.playerId)
+                  .flatMap((record) => {
+                    if (gameFilter === "all") return [record];
+                    const game = record.byGameType.find((item) => item.gameType === gameFilter);
+                    return game ? [{ ...record, ...game }] : [];
+                  });
+                const rateLabel = gameFilter === "all" ? "lifetime win rate" : "win rate";
 
                 return (
                 <article className="player-statistics__card" key={player.playerId}>
@@ -134,18 +174,18 @@ export default function PlayerStatistics({ onBack }: PlayerStatisticsProps) {
                     <span>{player.playerName.slice(0, 2).toUpperCase()}</span>
                     <div>
                       <h2>{player.playerName}</h2>
-                      <p>{player.gamesPlayed === 0 ? "No completed games" : `${player.winPercentage}% lifetime win rate`}</p>
+                      <p>{playerTotals.gamesPlayed === 0 ? "No completed games" : `${playerTotals.winPercentage}% ${rateLabel}`}</p>
                     </div>
                   </div>
 
                   <dl className="player-statistics__totals">
-                    <div><dt>Games</dt><dd>{player.gamesPlayed}</dd></div>
-                    <div><dt>Wins</dt><dd>{player.wins}</dd></div>
-                    <div><dt>Losses</dt><dd>{player.losses}</dd></div>
-                    <div><dt>Win rate</dt><dd>{player.winPercentage}%</dd></div>
+                    <div><dt>Games</dt><dd>{playerTotals.gamesPlayed}</dd></div>
+                    <div><dt>Wins</dt><dd>{playerTotals.wins}</dd></div>
+                    <div><dt>Losses</dt><dd>{playerTotals.losses}</dd></div>
+                    <div><dt>Win rate</dt><dd>{playerTotals.winPercentage}%</dd></div>
                   </dl>
 
-                  {player.byGameType.length > 0 && (
+                  {gameFilter === "all" && player.byGameType.length > 0 && (
                     <div className="player-statistics__breakdown">
                       <h3>By game</h3>
                       {player.byGameType.map((game) => (
@@ -179,6 +219,7 @@ export default function PlayerStatistics({ onBack }: PlayerStatisticsProps) {
                 );
               })}
             </div>
+            </>
           )}
         </div>
       </main>

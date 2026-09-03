@@ -28,6 +28,16 @@ export type HeadToHeadStatistics = {
   losses: number
   otherWinnerResults: number
   winPercentage: number
+  byGameType: HeadToHeadGameTypeStatistics[]
+}
+
+export type HeadToHeadGameTypeStatistics = {
+  gameType: string
+  gamesPlayed: number
+  wins: number
+  losses: number
+  otherWinnerResults: number
+  winPercentage: number
 }
 
 type PlayerStatisticsRow = {
@@ -43,6 +53,7 @@ type HeadToHeadStatisticsRow = {
   player_name: string
   opponent_id: string
   opponent_name: string
+  game_type: string
   games_played: number
   wins: number
   losses: number
@@ -129,6 +140,7 @@ export async function listHeadToHeadStatistics(
       subject.name AS player_name,
       opponent.id AS opponent_id,
       opponent.name AS opponent_name,
+      games.game_type,
       COUNT(games.id) AS games_played,
       SUM(CASE WHEN subject_result.is_winner = 1 THEN 1 ELSE 0 END) AS wins,
       SUM(CASE WHEN opponent_result.is_winner = 1 THEN 1 ELSE 0 END) AS losses
@@ -148,20 +160,51 @@ export async function listHeadToHeadStatistics(
     INNER JOIN players AS opponent
       ON opponent.id = opponent_result.player_id
     WHERE subject.deleted_at IS NULL
-    GROUP BY subject.id, subject.name, subject.created_at, opponent.id, opponent.name
+    GROUP BY subject.id, subject.name, subject.created_at, opponent.id, opponent.name,
+      games.game_type
     ORDER BY subject.created_at ASC, subject.name COLLATE NOCASE ASC,
-      games_played DESC, opponent.name COLLATE NOCASE ASC
+      games_played DESC, opponent.name COLLATE NOCASE ASC, games.game_type ASC
   `).all<HeadToHeadStatisticsRow>()
 
-  return result.results.map((row) => ({
-    playerId: row.player_id,
-    playerName: row.player_name,
-    opponentId: row.opponent_id,
-    opponentName: row.opponent_name,
-    gamesPlayed: row.games_played,
-    wins: row.wins,
-    losses: row.losses,
-    otherWinnerResults: row.games_played - row.wins - row.losses,
-    winPercentage: percentage(row.wins, row.games_played),
-  }))
+  const matchups = new Map<string, HeadToHeadStatistics>()
+
+  result.results.forEach((row) => {
+    const key = `${row.player_id}:${row.opponent_id}`
+    let matchup = matchups.get(key)
+    if (!matchup) {
+      matchup = {
+        playerId: row.player_id,
+        playerName: row.player_name,
+        opponentId: row.opponent_id,
+        opponentName: row.opponent_name,
+        gamesPlayed: 0,
+        wins: 0,
+        losses: 0,
+        otherWinnerResults: 0,
+        winPercentage: 0,
+        byGameType: [],
+      }
+      matchups.set(key, matchup)
+    }
+
+    const otherWinnerResults = row.games_played - row.wins - row.losses
+    matchup.gamesPlayed += row.games_played
+    matchup.wins += row.wins
+    matchup.losses += row.losses
+    matchup.otherWinnerResults += otherWinnerResults
+    matchup.byGameType.push({
+      gameType: row.game_type,
+      gamesPlayed: row.games_played,
+      wins: row.wins,
+      losses: row.losses,
+      otherWinnerResults,
+      winPercentage: percentage(row.wins, row.games_played),
+    })
+  })
+
+  matchups.forEach((matchup) => {
+    matchup.winPercentage = percentage(matchup.wins, matchup.gamesPlayed)
+  })
+
+  return [...matchups.values()]
 }

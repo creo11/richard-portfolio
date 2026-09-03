@@ -28,13 +28,22 @@ beforeEach(() => {
             wins: 3,
             losses: 1,
             winPercentage: 75,
-            byGameType: [{
-              gameType: "around-the-world",
-              gamesPlayed: 2,
-              wins: 1,
-              losses: 1,
-              winPercentage: 50,
-            }],
+            byGameType: [
+              {
+                gameType: "around-the-world",
+                gamesPlayed: 2,
+                wins: 1,
+                losses: 1,
+                winPercentage: 50,
+              },
+              {
+                gameType: "house-cricket",
+                gamesPlayed: 2,
+                wins: 2,
+                losses: 0,
+                winPercentage: 100,
+              },
+            ],
           },
           {
             playerId: "jaie",
@@ -57,6 +66,24 @@ beforeEach(() => {
             losses: 1,
             otherWinnerResults: 0,
             winPercentage: 75,
+            byGameType: [
+              {
+                gameType: "around-the-world",
+                gamesPlayed: 2,
+                wins: 1,
+                losses: 1,
+                otherWinnerResults: 0,
+                winPercentage: 50,
+              },
+              {
+                gameType: "house-cricket",
+                gamesPlayed: 2,
+                wins: 2,
+                losses: 0,
+                otherWinnerResults: 0,
+                winPercentage: 100,
+              },
+            ],
           },
           {
             playerId: "rick",
@@ -68,6 +95,14 @@ beforeEach(() => {
             losses: 0,
             otherWinnerResults: 1,
             winPercentage: 50,
+            byGameType: [{
+              gameType: "house-cricket",
+              gamesPlayed: 2,
+              wins: 1,
+              losses: 0,
+              otherWinnerResults: 1,
+              winPercentage: 50,
+            }],
           },
         ],
       });
@@ -202,6 +237,18 @@ describe("DartSync scoring flow", () => {
       .toBeInTheDocument();
     expect(within(statistics).getByText("No completed games"))
       .toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Rick's House Rules Cricket" }));
+    const rickCard = within(statistics).getByRole("heading", { name: "Rick" }).closest("article");
+    if (!rickCard) throw new Error("Could not find Rick's statistics card");
+    expect(within(rickCard).getByText("100% win rate")).toBeInTheDocument();
+    expect(within(rickCard).getByText("2W · 0L")).toBeInTheDocument();
+    expect(within(rickCard).getByText("1 other-winner result")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Around the World" }));
+    expect(within(rickCard).getByText("50% win rate")).toBeInTheDocument();
+    expect(within(rickCard).getByText("1W · 1L")).toBeInTheDocument();
+    expect(within(rickCard).queryByText("Enrique")).not.toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith("/api/dartsync/statistics", {
       headers: {
         Accept: "application/json",
