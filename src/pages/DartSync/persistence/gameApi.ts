@@ -169,10 +169,13 @@ export async function loadPersistedGameHistory(
   turnstileToken: string,
   signal?: AbortSignal,
   cursor?: string,
+  playerId?: string,
 ): Promise<PersistedGameHistoryPage> {
-  const endpoint = cursor
-    ? `${GAMES_ENDPOINT}?cursor=${encodeURIComponent(cursor)}`
-    : GAMES_ENDPOINT
+  const searchParams = new URLSearchParams()
+  if (cursor) searchParams.set('cursor', cursor)
+  if (playerId) searchParams.set('playerId', playerId)
+  const query = searchParams.toString()
+  const endpoint = query ? `${GAMES_ENDPOINT}?${query}` : GAMES_ENDPOINT
   const response = await fetch(endpoint, {
     headers: {
       Accept: 'application/json',

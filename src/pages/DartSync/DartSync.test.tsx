@@ -108,7 +108,7 @@ beforeEach(() => {
       });
     }
 
-    if (!init?.method && String(_input) === "/api/dartsync/games") {
+    if (!init?.method && String(_input).startsWith("/api/dartsync/games")) {
       return Response.json({
         games: [{
           id: "history-game-1",
@@ -256,6 +256,20 @@ describe("DartSync scoring flow", () => {
       },
       signal: expect.any(AbortSignal),
     });
+
+    await user.click(within(rickCard).getByRole("button", { name: "View game history" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Rick's game history" }))
+      .toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledWith("/api/dartsync/games?playerId=rick", {
+      headers: {
+        Accept: "application/json",
+        "X-Turnstile-Token": "test-turnstile-token",
+      },
+      signal: expect.any(AbortSignal),
+    });
+    await user.click(screen.getByRole("button", { name: "Back to statistics" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Player statistics" }))
+      .toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Back to games" }));
     expect(

@@ -10,11 +10,12 @@ import "./PlayerStatistics.less";
 
 type PlayerStatisticsProps = {
   onBack: () => void;
+  onViewHistory: (playerId: string, playerName: string) => void;
 };
 
 type StatisticsFilter = "all" | GameId;
 
-export default function PlayerStatistics({ onBack }: PlayerStatisticsProps) {
+export default function PlayerStatistics({ onBack, onViewHistory }: PlayerStatisticsProps) {
   const [players, setPlayers] = useState<PlayerStatisticsRecord[]>([]);
   const [headToHead, setHeadToHead] = useState<HeadToHeadStatistics[]>([]);
   const [gameFilter, setGameFilter] = useState<StatisticsFilter>("all");
@@ -215,6 +216,17 @@ export default function PlayerStatistics({ onBack }: PlayerStatisticsProps) {
                       ))}
                     </div>
                   )}
+
+                  <button
+                    className="player-statistics__history"
+                    type="button"
+                    onClick={() => onViewHistory(player.playerId, player.playerName)}
+                  >
+                    View game history
+                    <svg viewBox="0 0 20 20" aria-hidden="true">
+                      <path d="M4 10h11M11 6l4 4-4 4" />
+                    </svg>
+                  </button>
                 </article>
                 );
               })}

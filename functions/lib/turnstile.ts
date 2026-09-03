@@ -17,6 +17,8 @@ type TurnstileResult = {
 
 const TOKEN_HEADER = 'X-Turnstile-Token'
 const MAX_TOKEN_LENGTH = 2048
+const LOCAL_TEST_SECRET = '1x0000000000000000000000000000000AA'
+const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1'])
 
 export async function verifyTurnstileRequest(
   request: Request,
@@ -61,6 +63,16 @@ export async function verifyTurnstileRequest(
     result = await response.json() as TurnstileResult
   } catch {
     return false
+  }
+
+  if (result.success !== true) return false
+
+  const requestHostname = new URL(request.url).hostname
+  if (
+    env.TURNSTILE_SECRET === LOCAL_TEST_SECRET
+    && LOCAL_HOSTNAMES.has(requestHostname)
+  ) {
+    return true
   }
 
   return result.success === true

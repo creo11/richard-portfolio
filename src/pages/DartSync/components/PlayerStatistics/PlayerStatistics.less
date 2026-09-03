@@ -280,6 +280,31 @@
     }
   }
 
+  &__history {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    width: 100%;
+    margin-top: 20px;
+    padding: 10px 14px;
+    border: 1px solid var(--dartsync-border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--dartsync-text);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+
+    svg {
+      width: 17px;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-width: 1.6;
+    }
+  }
+
   &__message {
     display: grid;
     justify-items: center;

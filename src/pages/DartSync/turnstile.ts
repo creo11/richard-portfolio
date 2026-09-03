@@ -9,8 +9,16 @@ export type TurnstileAction =
   | "game_history"
   | "statistics_read";
 
-const TURNSTILE_SITE_KEY = "0x4AAAAAAEjiyS4IbzQLd7D2";
+const PRODUCTION_TURNSTILE_SITE_KEY = "0x4AAAAAAEjiyS4IbzQLd7D2";
+const LOCAL_TURNSTILE_SITE_KEY = "1x00000000000000000000BB";
 const TURNSTILE_SCRIPT_ID = "dartsync-turnstile-script";
+
+function getTurnstileSiteKey() {
+  return window.location.hostname === "localhost"
+    || window.location.hostname === "127.0.0.1"
+    ? LOCAL_TURNSTILE_SITE_KEY
+    : PRODUCTION_TURNSTILE_SITE_KEY;
+}
 
 type TurnstileWidgetOptions = {
   sitekey: string;
@@ -19,7 +27,7 @@ type TurnstileWidgetOptions = {
   appearance: "interaction-only";
   theme: "dark";
   callback: (token: string) => void;
-  "error-callback": () => boolean;
+  "error-callback": (errorCode?: string) => boolean;
   "expired-callback": () => void;
 };
 
@@ -101,7 +109,7 @@ export async function requestTurnstileToken(
     };
 
     widgetId = turnstile.render(container, {
-      sitekey: TURNSTILE_SITE_KEY,
+      sitekey: getTurnstileSiteKey(),
       action,
       execution: "execute",
       appearance: "interaction-only",
@@ -111,8 +119,9 @@ export async function requestTurnstileToken(
         settled = true;
         resolve({ token, release });
       },
-      "error-callback": () => {
-        fail("Cloudflare could not verify this request. Please try again.");
+      "error-callback": (errorCode) => {
+        const suffix = errorCode ? ` (Error ${errorCode})` : "";
+        fail(`Cloudflare could not verify this request${suffix}. Please try again.`);
         return true;
       },
       "expired-callback": () => {

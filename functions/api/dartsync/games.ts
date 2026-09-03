@@ -94,8 +94,18 @@ export async function handleListGames(
     return jsonResponse({ error: 'History cursor is invalid.' }, 400)
   }
 
+  const playerId = new URL(request.url).searchParams.get('playerId')
+  if (playerId !== null && (playerId.length === 0 || playerId.length > 128)) {
+    return jsonResponse({ error: 'History player filter is invalid.' }, 400)
+  }
+
   try {
-    const page = await listCompletedGames(database, HISTORY_PAGE_SIZE, offset)
+    const page = await listCompletedGames(
+      database,
+      HISTORY_PAGE_SIZE,
+      offset,
+      playerId ?? undefined,
+    )
     return jsonResponse({
       games: page.games,
       nextCursor: page.hasMore ? String(offset + HISTORY_PAGE_SIZE) : null,

@@ -387,5 +387,9 @@ describe('DartSync game repository', () => {
       games: [{ id: 'game-1' }],
       hasMore: false,
     })
+    await expect(listCompletedGames(database, 20, 0, 'missing-player')).resolves.toEqual({
+      games: [],
+      hasMore: false,
+    })
   })
 })

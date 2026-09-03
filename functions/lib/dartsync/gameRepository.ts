@@ -308,6 +308,7 @@ export async function listCompletedGames(
   database: GameDatabase,
   limit = 20,
   offset = 0,
+  playerId?: string,
 ): Promise<CompletedGameHistoryPage> {
   const result = await database
     .prepare(`
@@ -315,6 +316,15 @@ export async function listCompletedGames(
         SELECT id, game_type, options_json, started_at, completed_at
         FROM games
         WHERE status = 'completed'
+          AND (
+            ?3 IS NULL
+            OR EXISTS (
+              SELECT 1
+              FROM game_players AS filtered_player
+              WHERE filtered_player.game_id = games.id
+                AND filtered_player.player_id = ?3
+            )
+          )
         ORDER BY completed_at DESC, id DESC
         LIMIT ?1 OFFSET ?2
       )
@@ -337,7 +347,7 @@ export async function listCompletedGames(
         AND game_results.player_id = game_players.player_id
       ORDER BY recent_games.completed_at DESC, recent_games.id DESC, game_players.turn_order ASC
     `)
-    .bind(limit + 1, offset)
+    .bind(limit + 1, offset, playerId ?? null)
     .all<CompletedGameHistoryRow>()
 
   const games = new Map<string, CompletedGameHistoryItem>()

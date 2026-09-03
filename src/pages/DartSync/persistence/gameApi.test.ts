@@ -175,6 +175,20 @@ describe('DartSync game API client', () => {
     })
   })
 
+  it('requests history for one player while preserving pagination', async () => {
+    vi.mocked(fetch).mockResolvedValue(Response.json({ games: [], nextCursor: null }))
+
+    await expect(loadPersistedGameHistory('history-token', undefined, '20', 'rick'))
+      .resolves.toEqual({ games: [], nextCursor: null })
+    expect(fetch).toHaveBeenCalledWith('/api/dartsync/games?cursor=20&playerId=rick', {
+      headers: {
+        Accept: 'application/json',
+        'X-Turnstile-Token': 'history-token',
+      },
+      signal: undefined,
+    })
+  })
+
   it('rejects malformed game history responses', async () => {
     vi.mocked(fetch).mockResolvedValue(Response.json({
       games: [{

@@ -10,6 +10,10 @@ import "./GameHistory.less";
 
 type GameHistoryProps = {
   onBack: () => void;
+  playerFilter?: {
+    id: string;
+    name: string;
+  };
 };
 
 function formatCompletedAt(value: string) {
@@ -19,7 +23,7 @@ function formatCompletedAt(value: string) {
   }).format(new Date(value));
 }
 
-export default function GameHistory({ onBack }: GameHistoryProps) {
+export default function GameHistory({ onBack, playerFilter }: GameHistoryProps) {
   const [games, setGames] = useState<PersistedGameHistoryItem[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState("");
@@ -38,12 +42,15 @@ export default function GameHistory({ onBack }: GameHistoryProps) {
 
     return games.filter((game) => {
       const matchesType = gameTypeFilter === "all" || game.gameType === gameTypeFilter;
+      const matchesPlayer = !playerFilter || game.participants.some((participant) =>
+        participant.playerId === playerFilter.id
+      );
       const matchesSearch = !query || game.participants.some((participant) =>
         participant.playerName.toLowerCase().includes(query)
       );
-      return matchesType && matchesSearch;
+      return matchesType && matchesPlayer && matchesSearch;
     });
-  }, [gameTypeFilter, games, searchQuery]);
+  }, [gameTypeFilter, games, playerFilter, searchQuery]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -64,7 +71,9 @@ export default function GameHistory({ onBack }: GameHistoryProps) {
         releaseVerification = verification.release;
         const page = await loadPersistedGameHistory(
           verification.token,
-          controller.signal
+          controller.signal,
+          undefined,
+          playerFilter?.id
         );
 
         if (active) {
@@ -93,7 +102,7 @@ export default function GameHistory({ onBack }: GameHistoryProps) {
       controller.abort();
       releaseVerification();
     };
-  }, [loadAttempt]);
+  }, [loadAttempt, playerFilter?.id]);
 
   const loadMore = async () => {
     if (!nextCursor || !turnstileContainerRef.current || isLoadingMore) return;
@@ -111,7 +120,8 @@ export default function GameHistory({ onBack }: GameHistoryProps) {
       const page = await loadPersistedGameHistory(
         verification.token,
         undefined,
-        nextCursor
+        nextCursor,
+        playerFilter?.id
       );
       setGames((currentGames) => [...currentGames, ...page.games]);
       setNextCursor(page.nextCursor);
@@ -143,14 +153,14 @@ export default function GameHistory({ onBack }: GameHistoryProps) {
               <svg viewBox="0 0 20 20" aria-hidden="true">
                 <path d="M16 10H5M9 6l-4 4 4 4" />
               </svg>
-              Back to games
+              {playerFilter ? "Back to statistics" : "Back to games"}
             </button>
           </div>
 
           <div className="game-history__intro">
             <span className="game-history__eyebrow">Game records</span>
-            <h1>Game history</h1>
-            <p>Review completed games and player results.</p>
+            <h1>{playerFilter ? `${playerFilter.name}'s game history` : "Game history"}</h1>
+            <p>{playerFilter ? `Review completed games featuring ${playerFilter.name}.` : "Review completed games and player results."}</p>
           </div>
         </div>
       </header>
@@ -182,7 +192,7 @@ export default function GameHistory({ onBack }: GameHistoryProps) {
           {status === "ready" && games.length > 0 && (
             <>
               <div className="game-history__filters">
-                <label className="game-history__search">
+                {!playerFilter && <label className="game-history__search">
                   <span>Search by player</span>
                   <input
                     type="search"
@@ -190,7 +200,7 @@ export default function GameHistory({ onBack }: GameHistoryProps) {
                     placeholder="Search player names"
                     onChange={(event) => setSearchQuery(event.target.value)}
                   />
-                </label>
+                </label>}
                 <label className="game-history__filter">
                   <span>Game type</span>
                   <select

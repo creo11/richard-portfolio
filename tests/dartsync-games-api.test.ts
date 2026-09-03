@@ -350,4 +350,36 @@ describe('GET /api/dartsync/games', () => {
 
     expect(response.status).toBe(400)
   })
+
+  it('filters completed game history by player', async () => {
+    const { database, sqlite } = createDatabase()
+    seedPlayers(sqlite)
+    await handleStartGame(
+      jsonRequest('/api/dartsync/games', validStartBody),
+      database,
+      () => 'game-1',
+    )
+    await handleCompleteGame(
+      jsonRequest('/api/dartsync/games/game-1/complete', validCompletionBody),
+      database,
+      'game-1',
+    )
+
+    const response = await handleListGames(
+      new Request('http://localhost/api/dartsync/games?playerId=missing-player'),
+      database,
+    )
+
+    await expect(response.json()).resolves.toEqual({ games: [], nextCursor: null })
+  })
+
+  it('rejects an empty history player filter', async () => {
+    const { database } = createDatabase()
+    const response = await handleListGames(
+      new Request('http://localhost/api/dartsync/games?playerId='),
+      database,
+    )
+
+    expect(response.status).toBe(400)
+  })
 })

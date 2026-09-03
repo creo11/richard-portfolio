@@ -18,6 +18,11 @@ function createRequest(token = 'test-token'): Request {
   })
 }
 
+const localTestEnv = {
+  TURNSTILE_SECRET: '1x0000000000000000000000000000000AA',
+  TURNSTILE_HOSTNAMES: 'localhost,127.0.0.1',
+} as Env
+
 beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn())
 })
@@ -38,6 +43,26 @@ describe('Turnstile request verification', () => {
     expect(request?.method).toBe('POST')
     expect(String(request?.body)).toContain('response=test-token')
     expect(String(request?.body)).toContain('remoteip=203.0.113.10')
+  })
+
+  it('accepts Cloudflare test-key metadata only for a local request', async () => {
+    vi.mocked(fetch).mockResolvedValue(Response.json({
+      success: true,
+      action: '',
+      hostname: 'example.com',
+    }))
+
+    await expect(
+      verifyTurnstileRequest(createRequest(), localTestEnv, 'player_create'),
+    ).resolves.toBe(true)
+
+    const remoteRequest = new Request('https://rickgutz.com/api/dartsync/players', {
+      method: 'POST',
+      headers: { 'X-Turnstile-Token': 'test-token' },
+    })
+    await expect(
+      verifyTurnstileRequest(remoteRequest, localTestEnv, 'player_create'),
+    ).resolves.toBe(false)
   })
 
   it.each([

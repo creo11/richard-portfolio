@@ -49,6 +49,7 @@ function shufflePlayers(players: Player[]) {
 
 export default function DartSync() {
     const [step, setStep] = useState<DartSyncStep>("game-select");
+    const [historyPlayer, setHistoryPlayer] = useState<{ id: string; name: string } | null>(null);
     const [gamePlayers, setGamePlayers] = useState<Player[]>([]);
     const [game, setGame] = useState<unknown | null>(null);
     const persistedGameIdRef = useRef<string | null>(null);
@@ -403,17 +404,29 @@ export default function DartSync() {
             {step === "game-select" && (
                 <GameSelect
                     onSelectGame={handleGameSelect}
-                    onViewHistory={() => setStep("game-history")}
+                    onViewHistory={() => {
+                        setHistoryPlayer(null);
+                        setStep("game-history");
+                    }}
                     onViewStatistics={() => setStep("player-statistics")}
                 />
             )}
 
             {step === "game-history" && (
-                <GameHistory onBack={() => setStep("game-select")} />
+                <GameHistory
+                    playerFilter={historyPlayer ?? undefined}
+                    onBack={() => setStep(historyPlayer ? "player-statistics" : "game-select")}
+                />
             )}
 
             {step === "player-statistics" && (
-                <PlayerStatistics onBack={() => setStep("game-select")} />
+                <PlayerStatistics
+                    onBack={() => setStep("game-select")}
+                    onViewHistory={(id, name) => {
+                        setHistoryPlayer({ id, name });
+                        setStep("game-history");
+                    }}
+                />
             )}
 
             {step === "player-management" && (
