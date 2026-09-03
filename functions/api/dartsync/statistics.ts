@@ -1,5 +1,6 @@
 import {
   listPlayerStatistics,
+  listHeadToHeadStatistics,
 } from '../../lib/dartsync/statisticsRepository'
 import type { PlayerDatabase } from '../../lib/dartsync/playerRepository'
 import {
@@ -15,8 +16,11 @@ export async function handleListStatistics(
   database: PlayerDatabase,
 ): Promise<Response> {
   try {
-    const players = await listPlayerStatistics(database)
-    return Response.json({ players }, { headers: responseHeaders })
+    const [players, headToHead] = await Promise.all([
+      listPlayerStatistics(database),
+      listHeadToHeadStatistics(database),
+    ])
+    return Response.json({ players, headToHead }, { headers: responseHeaders })
   } catch (error) {
     console.error(JSON.stringify({
       event: 'dartsync.statistics.read_failed',

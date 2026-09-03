@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getGameRegistration } from "../../games/registry";
 import {
   loadPlayerStatistics,
+  type HeadToHeadStatistics,
   type PlayerStatistics as PlayerStatisticsRecord,
 } from "../../persistence/statisticsApi";
 import { requestTurnstileToken } from "../../turnstile";
@@ -13,6 +14,7 @@ type PlayerStatisticsProps = {
 
 export default function PlayerStatistics({ onBack }: PlayerStatisticsProps) {
   const [players, setPlayers] = useState<PlayerStatisticsRecord[]>([]);
+  const [headToHead, setHeadToHead] = useState<HeadToHeadStatistics[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -42,7 +44,8 @@ export default function PlayerStatistics({ onBack }: PlayerStatisticsProps) {
         );
 
         if (active) {
-          setPlayers(statistics);
+          setPlayers(statistics.players);
+          setHeadToHead(statistics.headToHead);
           setStatus("ready");
         }
       } catch (loadError) {
@@ -122,7 +125,10 @@ export default function PlayerStatistics({ onBack }: PlayerStatisticsProps) {
 
           {status === "ready" && players.length > 0 && (
             <div className="player-statistics__grid" aria-label={`${players.length} player statistics`}>
-              {players.map((player) => (
+              {players.map((player) => {
+                const matchups = headToHead.filter((record) => record.playerId === player.playerId);
+
+                return (
                 <article className="player-statistics__card" key={player.playerId}>
                   <div className="player-statistics__player">
                     <span>{player.playerName.slice(0, 2).toUpperCase()}</span>
@@ -151,8 +157,27 @@ export default function PlayerStatistics({ onBack }: PlayerStatisticsProps) {
                       ))}
                     </div>
                   )}
+
+                  {matchups.length > 0 && (
+                    <div className="player-statistics__breakdown">
+                      <h3>Head to head</h3>
+                      {matchups.map((matchup) => (
+                        <div className="player-statistics__matchup" key={matchup.opponentId}>
+                          <strong>{matchup.opponentName}</strong>
+                          <span>{matchup.wins}W · {matchup.losses}L</span>
+                          <em>{matchup.winPercentage}%</em>
+                          {matchup.otherWinnerResults > 0 && (
+                            <small>
+                              {matchup.otherWinnerResults} other-winner {matchup.otherWinnerResults === 1 ? "result" : "results"}
+                            </small>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </article>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -19,6 +19,23 @@ export type PlayerStatistics = {
   byGameType: GameTypeStatistics[]
 }
 
+export type HeadToHeadStatistics = {
+  playerId: string
+  playerName: string
+  opponentId: string
+  opponentName: string
+  gamesPlayed: number
+  wins: number
+  losses: number
+  otherWinnerResults: number
+  winPercentage: number
+}
+
+export type PlayerStatisticsDashboard = {
+  players: PlayerStatistics[]
+  headToHead: HeadToHeadStatistics[]
+}
+
 type ErrorResponse = {
   error?: unknown
 }
@@ -58,6 +75,20 @@ function isPlayerStatistics(value: unknown): value is PlayerStatistics {
     && value.byGameType.every(isGameTypeStatistics)
 }
 
+function isHeadToHeadStatistics(value: unknown): value is HeadToHeadStatistics {
+  return isRecord(value)
+    && typeof value.playerId === 'string'
+    && typeof value.playerName === 'string'
+    && typeof value.opponentId === 'string'
+    && typeof value.opponentName === 'string'
+    && isNonNegativeInteger(value.gamesPlayed)
+    && isNonNegativeInteger(value.wins)
+    && isNonNegativeInteger(value.losses)
+    && isNonNegativeInteger(value.otherWinnerResults)
+    && value.wins + value.losses + value.otherWinnerResults === value.gamesPlayed
+    && isPercentage(value.winPercentage)
+}
+
 async function getErrorMessage(response: Response): Promise<string> {
   try {
     const body = await response.json() as ErrorResponse
@@ -72,7 +103,7 @@ async function getErrorMessage(response: Response): Promise<string> {
 export async function loadPlayerStatistics(
   turnstileToken: string,
   signal?: AbortSignal,
-): Promise<PlayerStatistics[]> {
+): Promise<PlayerStatisticsDashboard> {
   const response = await fetch(STATISTICS_ENDPOINT, {
     headers: {
       Accept: 'application/json',
@@ -85,10 +116,18 @@ export async function loadPlayerStatistics(
     throw new Error(await getErrorMessage(response))
   }
 
-  const body = await response.json() as { players?: unknown }
-  if (!Array.isArray(body.players) || !body.players.every(isPlayerStatistics)) {
+  const body = await response.json() as { players?: unknown, headToHead?: unknown }
+  if (
+    !Array.isArray(body.players)
+    || !body.players.every(isPlayerStatistics)
+    || !Array.isArray(body.headToHead)
+    || !body.headToHead.every(isHeadToHeadStatistics)
+  ) {
     throw new Error('DartSync received an invalid player statistics response.')
   }
 
-  return body.players
+  return {
+    players: body.players,
+    headToHead: body.headToHead,
+  }
 }

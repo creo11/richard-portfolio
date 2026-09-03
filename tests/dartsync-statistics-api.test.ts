@@ -114,5 +114,72 @@ it('returns reset-aware lifetime and per-game statistics for active players', as
         byGameType: [],
       },
     ],
+    headToHead: [
+      {
+        playerId: 'rick',
+        playerName: 'Rick',
+        opponentId: 'jaie',
+        opponentName: 'Jaie',
+        gamesPlayed: 1,
+        wins: 0,
+        losses: 1,
+        otherWinnerResults: 0,
+        winPercentage: 0,
+      },
+      {
+        playerId: 'jaie',
+        playerName: 'Jaie',
+        opponentId: 'rick',
+        opponentName: 'Rick',
+        gamesPlayed: 2,
+        wins: 1,
+        losses: 1,
+        otherWinnerResults: 0,
+        winPercentage: 50,
+      },
+    ],
   })
+})
+
+it('retains deleted opponents and distinguishes a third-party winner', async () => {
+  const { database, sqlite } = createDatabase()
+  sqlite.exec(`
+    INSERT INTO players (id, name, created_at)
+    VALUES ('rick', 'Rick', '2026-08-01T00:00:00.000Z');
+    INSERT INTO players (id, name, created_at)
+    VALUES ('jaie', 'Jaie', '2026-08-01T00:01:00.000Z');
+    INSERT INTO players (id, name, deleted_at, created_at)
+    VALUES ('enrique', 'Enrique', '2026-08-04T00:00:00.000Z', '2026-08-01T00:02:00.000Z');
+    INSERT INTO games (id, game_type, status, completed_at)
+    VALUES ('game-1', 'house-cricket', 'completed', '2026-08-03T12:00:00.000Z');
+    INSERT INTO game_players (game_id, player_id, player_name, turn_order)
+    VALUES ('game-1', 'rick', 'Rick', 0), ('game-1', 'jaie', 'Jaie', 1),
+           ('game-1', 'enrique', 'Enrique', 2);
+    INSERT INTO game_results (game_id, player_id, player_name, is_winner, placement)
+    VALUES ('game-1', 'rick', 'Rick', 0, 2), ('game-1', 'jaie', 'Jaie', 0, 3),
+           ('game-1', 'enrique', 'Enrique', 1, 1);
+  `)
+
+  const response = await handleListStatistics(database)
+  const body = await response.json() as {
+    headToHead: Array<Record<string, unknown>>
+  }
+
+  expect(body.headToHead).toContainEqual({
+    playerId: 'rick',
+    playerName: 'Rick',
+    opponentId: 'jaie',
+    opponentName: 'Jaie',
+    gamesPlayed: 1,
+    wins: 0,
+    losses: 0,
+    otherWinnerResults: 1,
+    winPercentage: 0,
+  })
+  expect(body.headToHead).toContainEqual(expect.objectContaining({
+    playerId: 'rick',
+    opponentId: 'enrique',
+    opponentName: 'Enrique',
+    losses: 1,
+  }))
 })

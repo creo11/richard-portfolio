@@ -46,6 +46,30 @@ beforeEach(() => {
             byGameType: [],
           },
         ],
+        headToHead: [
+          {
+            playerId: "rick",
+            playerName: "Rick",
+            opponentId: "jaie",
+            opponentName: "Jaie",
+            gamesPlayed: 4,
+            wins: 3,
+            losses: 1,
+            otherWinnerResults: 0,
+            winPercentage: 75,
+          },
+          {
+            playerId: "rick",
+            playerName: "Rick",
+            opponentId: "enrique",
+            opponentName: "Enrique",
+            gamesPlayed: 2,
+            wins: 1,
+            losses: 0,
+            otherWinnerResults: 1,
+            winPercentage: 50,
+          },
+        ],
       });
     }
 
@@ -169,6 +193,12 @@ describe("DartSync scoring flow", () => {
     expect(within(statistics).getByText("75% lifetime win rate"))
       .toBeInTheDocument();
     expect(within(statistics).getByText("1W · 1L"))
+      .toBeInTheDocument();
+    expect(within(statistics).getByText("3W · 1L"))
+      .toBeInTheDocument();
+    expect(within(statistics).getByText("Enrique"))
+      .toBeInTheDocument();
+    expect(within(statistics).getByText("1 other-winner result"))
       .toBeInTheDocument();
     expect(within(statistics).getByText("No completed games"))
       .toBeInTheDocument();

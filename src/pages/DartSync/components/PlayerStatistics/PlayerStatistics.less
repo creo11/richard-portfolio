@@ -223,6 +223,37 @@
     }
   }
 
+  &__matchup {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 5px 12px;
+    padding: 10px 0;
+    font-size: 12px;
+
+    & + & {
+      border-top: 1px solid var(--dartsync-border);
+    }
+
+    span,
+    small {
+      color: var(--dartsync-text-muted);
+    }
+
+    em {
+      min-width: 42px;
+      color: #79d9ef;
+      font-style: normal;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    small {
+      grid-column: 1 / -1;
+      font-size: 10px;
+    }
+  }
+
   &__message {
     display: grid;
     justify-items: center;
@@ -307,6 +338,23 @@
       em {
         grid-column: 2;
         grid-row: 1 / span 2;
+      }
+    }
+
+    &__matchup {
+      grid-template-columns: minmax(0, 1fr) auto;
+
+      span {
+        grid-column: 1;
+      }
+
+      em {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+      }
+
+      small {
+        grid-column: 1 / -1;
       }
     }
   }

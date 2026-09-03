@@ -18,12 +18,34 @@ export type PlayerStatistics = {
   byGameType: GameTypeStatistics[]
 }
 
+export type HeadToHeadStatistics = {
+  playerId: string
+  playerName: string
+  opponentId: string
+  opponentName: string
+  gamesPlayed: number
+  wins: number
+  losses: number
+  otherWinnerResults: number
+  winPercentage: number
+}
+
 type PlayerStatisticsRow = {
   player_id: string
   player_name: string
   game_type: string | null
   games_played: number
   wins: number
+}
+
+type HeadToHeadStatisticsRow = {
+  player_id: string
+  player_name: string
+  opponent_id: string
+  opponent_name: string
+  games_played: number
+  wins: number
+  losses: number
 }
 
 function percentage(wins: number, gamesPlayed: number): number {
@@ -96,4 +118,50 @@ export async function listPlayerStatistics(
   })
 
   return [...players.values()]
+}
+
+export async function listHeadToHeadStatistics(
+  database: PlayerDatabase,
+): Promise<HeadToHeadStatistics[]> {
+  const result = await database.prepare(`
+    SELECT
+      subject.id AS player_id,
+      subject.name AS player_name,
+      opponent.id AS opponent_id,
+      opponent.name AS opponent_name,
+      COUNT(games.id) AS games_played,
+      SUM(CASE WHEN subject_result.is_winner = 1 THEN 1 ELSE 0 END) AS wins,
+      SUM(CASE WHEN opponent_result.is_winner = 1 THEN 1 ELSE 0 END) AS losses
+    FROM players AS subject
+    INNER JOIN game_results AS subject_result
+      ON subject_result.player_id = subject.id
+    INNER JOIN games
+      ON games.id = subject_result.game_id
+      AND games.status = 'completed'
+      AND (
+        subject.stats_reset_at IS NULL
+        OR games.completed_at >= subject.stats_reset_at
+      )
+    INNER JOIN game_results AS opponent_result
+      ON opponent_result.game_id = games.id
+      AND opponent_result.player_id != subject.id
+    INNER JOIN players AS opponent
+      ON opponent.id = opponent_result.player_id
+    WHERE subject.deleted_at IS NULL
+    GROUP BY subject.id, subject.name, subject.created_at, opponent.id, opponent.name
+    ORDER BY subject.created_at ASC, subject.name COLLATE NOCASE ASC,
+      games_played DESC, opponent.name COLLATE NOCASE ASC
+  `).all<HeadToHeadStatisticsRow>()
+
+  return result.results.map((row) => ({
+    playerId: row.player_id,
+    playerName: row.player_name,
+    opponentId: row.opponent_id,
+    opponentName: row.opponent_name,
+    gamesPlayed: row.games_played,
+    wins: row.wins,
+    losses: row.losses,
+    otherWinnerResults: row.games_played - row.wins - row.losses,
+    winPercentage: percentage(row.wins, row.games_played),
+  }))
 }

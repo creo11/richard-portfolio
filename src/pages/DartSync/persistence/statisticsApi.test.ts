@@ -22,9 +22,20 @@ describe('DartSync statistics API client', () => {
         winPercentage: 50,
       }],
     }]
-    vi.mocked(fetch).mockResolvedValue(Response.json({ players }))
+    const headToHead = [{
+      playerId: 'rick',
+      playerName: 'Rick',
+      opponentId: 'jaie',
+      opponentName: 'Jaie',
+      gamesPlayed: 4,
+      wins: 2,
+      losses: 1,
+      otherWinnerResults: 1,
+      winPercentage: 50,
+    }]
+    vi.mocked(fetch).mockResolvedValue(Response.json({ players, headToHead }))
 
-    await expect(loadPlayerStatistics('statistics-token')).resolves.toEqual(players)
+    await expect(loadPlayerStatistics('statistics-token')).resolves.toEqual({ players, headToHead })
     expect(fetch).toHaveBeenCalledWith('/api/dartsync/statistics', {
       headers: {
         Accept: 'application/json',
@@ -68,7 +79,20 @@ describe('DartSync statistics API client', () => {
       },
     },
   ])('rejects $label', async ({ player }) => {
-    vi.mocked(fetch).mockResolvedValue(Response.json({ players: [player] }))
+    vi.mocked(fetch).mockResolvedValue(Response.json({ players: [player], headToHead: [] }))
+
+    await expect(loadPlayerStatistics('statistics-token'))
+      .rejects.toThrow('invalid player statistics response')
+  })
+
+  it('rejects an inconsistent head-to-head record', async () => {
+    vi.mocked(fetch).mockResolvedValue(Response.json({
+      players: [],
+      headToHead: [{
+        playerId: 'rick', playerName: 'Rick', opponentId: 'jaie', opponentName: 'Jaie',
+        gamesPlayed: 3, wins: 2, losses: 1, otherWinnerResults: 1, winPercentage: 67,
+      }],
+    }))
 
     await expect(loadPlayerStatistics('statistics-token'))
       .rejects.toThrow('invalid player statistics response')
