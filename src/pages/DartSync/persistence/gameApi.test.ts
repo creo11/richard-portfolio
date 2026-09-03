@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   abandonPersistedGame,
   completePersistedGame,
+  loadPersistedGameHistory,
   startPersistedGame,
 } from './gameApi'
 
@@ -107,5 +108,69 @@ describe('DartSync game API client', () => {
         'X-Turnstile-Token': 'abandon-token',
       },
     })
+  })
+
+  it('loads protected completed game history', async () => {
+    const games = [{
+      id: 'game-1',
+      gameType: 'around-the-world',
+      options: { multiplierAdvance: true },
+      startedAt: '2026-09-02T01:00:00.000Z',
+      completedAt: '2026-09-02T01:05:00.000Z',
+      participants: [
+        {
+          playerId: 'rick',
+          playerName: 'Rick',
+          turnOrder: 0,
+          isWinner: true,
+          placement: 1,
+          data: { targetIndex: 20 },
+        },
+        {
+          playerId: 'jaie',
+          playerName: 'Jaie',
+          turnOrder: 1,
+          isWinner: false,
+          placement: null,
+          data: { targetIndex: 12 },
+        },
+      ],
+    }]
+    vi.mocked(fetch).mockResolvedValue(Response.json({ games }))
+
+    await expect(loadPersistedGameHistory('history-token')).resolves.toEqual(games)
+    expect(fetch).toHaveBeenCalledWith('/api/dartsync/games', {
+      headers: {
+        Accept: 'application/json',
+        'X-Turnstile-Token': 'history-token',
+      },
+      signal: undefined,
+    })
+  })
+
+  it('surfaces an API error when game history cannot load', async () => {
+    vi.mocked(fetch).mockResolvedValue(Response.json(
+      { error: 'History is temporarily unavailable.' },
+      { status: 503 },
+    ))
+
+    await expect(loadPersistedGameHistory('history-token'))
+      .rejects.toThrow('History is temporarily unavailable.')
+  })
+
+  it('rejects malformed game history responses', async () => {
+    vi.mocked(fetch).mockResolvedValue(Response.json({
+      games: [{
+        id: 'game-1',
+        gameType: 'house-cricket',
+        options: {},
+        startedAt: '2026-09-02T01:00:00.000Z',
+        completedAt: '2026-09-02T01:05:00.000Z',
+        participants: [{ playerId: 'rick', isWinner: true }],
+      }],
+    }))
+
+    await expect(loadPersistedGameHistory('history-token'))
+      .rejects.toThrow('invalid game history response')
   })
 })

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { handleStartGame } from '../functions/api/dartsync/games'
+import { handleListGames, handleStartGame } from '../functions/api/dartsync/games'
 import { handleCompleteGame } from '../functions/api/dartsync/games/[id]/complete'
 import { handleAbandonGame } from '../functions/api/dartsync/games/[id]/abandon'
 import type {
@@ -301,5 +301,38 @@ describe('POST /api/dartsync/games/:id/abandon', () => {
     const response = await handleAbandonGame(database, 'missing')
 
     expect(response.status).toBe(404)
+  })
+})
+
+describe('GET /api/dartsync/games', () => {
+  it('returns completed game history without active or abandoned games', async () => {
+    const { database, sqlite } = createDatabase()
+    seedPlayers(sqlite)
+    await handleStartGame(
+      jsonRequest('/api/dartsync/games', validStartBody),
+      database,
+      () => 'game-1',
+    )
+    await handleCompleteGame(
+      jsonRequest('/api/dartsync/games/game-1/complete', validCompletionBody),
+      database,
+      'game-1',
+    )
+
+    const response = await handleListGames(database)
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Cache-Control')).toBe('no-store')
+    await expect(response.json()).resolves.toMatchObject({
+      games: [{
+        id: 'game-1',
+        gameType: 'around-the-world',
+        options: { multiplierAdvance: true },
+        participants: [
+          { playerId: 'rick', playerName: 'Rick', isWinner: true, placement: 1 },
+          { playerId: 'jaie', playerName: 'Jaie', isWinner: false, placement: 2 },
+        ],
+      }],
+    })
   })
 })

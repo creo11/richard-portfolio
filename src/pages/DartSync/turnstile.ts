@@ -5,7 +5,8 @@ export type TurnstileAction =
   | "player_delete"
   | "game_start"
   | "game_complete"
-  | "game_abandon";
+  | "game_abandon"
+  | "game_history";
 
 const TURNSTILE_SITE_KEY = "0x4AAAAAAEjiyS4IbzQLd7D2";
 const TURNSTILE_SCRIPT_ID = "dartsync-turnstile-script";

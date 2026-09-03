@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import GameSelect from "./components/GameSelect/GameSelect";
+import GameHistory from "./components/GameHistory/GameHistory";
 import PlayerManagement from "./components/PlayerManagement/PlayerManagement";
 import PlayerSelect from "./components/PlayerSelect/PlayerSelect";
 import { MOCK_PLAYERS } from "./data/mockPlayers";
@@ -28,6 +29,7 @@ import "./DartSync.less";
 
 type DartSyncStep =
     | "game-select"
+    | "game-history"
     | "player-management"
     | "player-select"
     | "scoring";
@@ -397,7 +399,14 @@ export default function DartSync() {
     return (
         <div className="dartsync-app">
             {step === "game-select" && (
-                <GameSelect onSelectGame={handleGameSelect} />
+                <GameSelect
+                    onSelectGame={handleGameSelect}
+                    onViewHistory={() => setStep("game-history")}
+                />
+            )}
+
+            {step === "game-history" && (
+                <GameHistory onBack={() => setStep("game-select")} />
             )}
 
             {step === "player-management" && (

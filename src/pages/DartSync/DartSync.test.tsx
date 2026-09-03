@@ -18,6 +18,36 @@ beforeEach(() => {
   };
 
   vi.stubGlobal("fetch", vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+    if (!init?.method && String(_input) === "/api/dartsync/games") {
+      return Response.json({
+        games: [{
+          id: "history-game-1",
+          gameType: "around-the-world",
+          options: { multiplierAdvance: true },
+          startedAt: "2026-09-02T01:00:00.000Z",
+          completedAt: "2026-09-02T01:05:00.000Z",
+          participants: [
+            {
+              playerId: "rick",
+              playerName: "Rick",
+              turnOrder: 0,
+              isWinner: true,
+              placement: 1,
+              data: { targetIndex: 21 },
+            },
+            {
+              playerId: "jaie",
+              playerName: "Jaie",
+              turnOrder: 1,
+              isWinner: false,
+              placement: null,
+              data: { targetIndex: 12 },
+            },
+          ],
+        }],
+      });
+    }
+
     if (
       init?.method === "POST"
       && (String(_input).endsWith("/complete") || String(_input).endsWith("/abandon"))
@@ -91,6 +121,45 @@ function getGameAction(gameName: string, actionName: string) {
 }
 
 describe("DartSync scoring flow", () => {
+  it("opens completed game history and returns to the game lobby", async () => {
+    const user = userEvent.setup();
+
+    render(<DartSync />);
+
+    await user.click(screen.getByRole("button", { name: "Game History" }));
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Game history" })
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Rick" })
+    ).toBeInTheDocument();
+    expect(screen.getByText("Around the World")).toBeInTheDocument();
+    expect(screen.getByLabelText("1 completed games")).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledWith("/api/dartsync/games", {
+      headers: {
+        Accept: "application/json",
+        "X-Turnstile-Token": "test-turnstile-token",
+      },
+      signal: expect.any(AbortSignal),
+    });
+
+    await user.click(screen.getByRole("button", { name: "View Details" }));
+    const detail = screen.getByRole("dialog", { name: "Around the World" });
+    expect(within(detail).getByText("Multiplier advancement")).toBeInTheDocument();
+    expect(within(detail).getByText("21 of 21")).toBeInTheDocument();
+    expect(within(detail).getByText("Finished")).toBeInTheDocument();
+    expect(within(detail).getByText("#1 in throwing order")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Close game details" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Back to games" }));
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Select a game" })
+    ).toBeInTheDocument();
+  });
+
   it("renders the selected game's registered rules view", async () => {
     const user = userEvent.setup();
 

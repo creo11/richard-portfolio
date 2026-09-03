@@ -6,6 +6,7 @@ export type TurnstileAction =
   | 'game_start'
   | 'game_complete'
   | 'game_abandon'
+  | 'game_history'
 
 type TurnstileResult = {
   success?: unknown

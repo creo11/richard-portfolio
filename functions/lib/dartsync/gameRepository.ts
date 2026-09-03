@@ -33,6 +33,24 @@ export type PlayerGameResult = {
   data: Record<string, unknown>
 }
 
+export type CompletedGameHistoryParticipant = {
+  playerId: string
+  playerName: string
+  turnOrder: number
+  isWinner: boolean
+  placement: number | null
+  data: Record<string, unknown>
+}
+
+export type CompletedGameHistoryItem = {
+  id: string
+  gameType: string
+  options: Record<string, boolean>
+  startedAt: string
+  completedAt: string
+  participants: CompletedGameHistoryParticipant[]
+}
+
 export class GameNotFoundError extends Error {
   constructor() {
     super('Game not found.')
@@ -74,6 +92,20 @@ type ParticipantRow = {
   player_id: string
   player_name: string
   turn_order: number
+}
+
+type CompletedGameHistoryRow = {
+  game_id: string
+  game_type: string
+  options_json: string
+  started_at: string
+  completed_at: string
+  player_id: string
+  player_name: string
+  turn_order: number
+  is_winner: number
+  placement: number | null
+  result_json: string
 }
 
 function createPlaceholders(count: number): string {
@@ -265,4 +297,68 @@ export async function abandonGame(
 
   if (!game) throw new GameNotFoundError()
   throw new GameAlreadyFinishedError()
+}
+
+export async function listCompletedGames(
+  database: GameDatabase,
+  limit = 50,
+): Promise<CompletedGameHistoryItem[]> {
+  const result = await database
+    .prepare(`
+      WITH recent_games AS (
+        SELECT id, game_type, options_json, started_at, completed_at
+        FROM games
+        WHERE status = 'completed'
+        ORDER BY completed_at DESC, id DESC
+        LIMIT ?1
+      )
+      SELECT
+        recent_games.id AS game_id,
+        recent_games.game_type,
+        recent_games.options_json,
+        recent_games.started_at,
+        recent_games.completed_at,
+        game_players.player_id,
+        game_players.player_name,
+        game_players.turn_order,
+        game_results.is_winner,
+        game_results.placement,
+        game_results.result_json
+      FROM recent_games
+      INNER JOIN game_players ON game_players.game_id = recent_games.id
+      INNER JOIN game_results
+        ON game_results.game_id = game_players.game_id
+        AND game_results.player_id = game_players.player_id
+      ORDER BY recent_games.completed_at DESC, recent_games.id DESC, game_players.turn_order ASC
+    `)
+    .bind(limit)
+    .all<CompletedGameHistoryRow>()
+
+  const games = new Map<string, CompletedGameHistoryItem>()
+
+  result.results.forEach((row) => {
+    let game = games.get(row.game_id)
+    if (!game) {
+      game = {
+        id: row.game_id,
+        gameType: row.game_type,
+        options: JSON.parse(row.options_json) as Record<string, boolean>,
+        startedAt: row.started_at,
+        completedAt: row.completed_at,
+        participants: [],
+      }
+      games.set(row.game_id, game)
+    }
+
+    game.participants.push({
+      playerId: row.player_id,
+      playerName: row.player_name,
+      turnOrder: row.turn_order,
+      isWinner: row.is_winner === 1,
+      placement: row.placement,
+      data: JSON.parse(row.result_json) as Record<string, unknown>,
+    })
+  })
+
+  return [...games.values()]
 }

@@ -1,5 +1,6 @@
 import {
   InvalidGameParticipantsError,
+  listCompletedGames,
   startGame,
   type GameDatabase,
 } from '../../lib/dartsync/gameRepository'
@@ -71,4 +72,25 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   return handleStartGame(request, env.DB)
+}
+
+export async function handleListGames(database: GameDatabase): Promise<Response> {
+  try {
+    const games = await listCompletedGames(database)
+    return jsonResponse({ games }, 200)
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: 'dartsync.games.list_failed',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    }))
+    return jsonResponse({ error: 'Unable to load game history.' }, 500)
+  }
+}
+
+export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
+  if (!await verifyTurnstileRequest(request, env, 'game_history')) {
+    return turnstileForbiddenResponse()
+  }
+
+  return handleListGames(env.DB)
 }

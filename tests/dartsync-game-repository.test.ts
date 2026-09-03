@@ -10,6 +10,7 @@ import {
   GameAlreadyFinishedError,
   InvalidGameParticipantsError,
   InvalidGameResultsError,
+  listCompletedGames,
   startGame,
   type GameDatabase,
   type GameStatement,
@@ -274,5 +275,105 @@ describe('DartSync game repository', () => {
       .toEqual({ count: 0 })
     await expect(abandonGame(database, 'game-1'))
       .rejects.toBeInstanceOf(GameAlreadyFinishedError)
+  })
+
+  it('lists completed games newest first with participant result snapshots', async () => {
+    const { database, sqlite } = createDatabase()
+    addPlayers(sqlite)
+
+    await startGame(database, {
+      id: 'game-1',
+      gameType: 'around-the-world',
+      options: { multiplierAdvance: true },
+      playerIds: ['rick', 'jaie'],
+    })
+    await completeGame(database, {
+      gameId: 'game-1',
+      winnerPlayerId: 'rick',
+      results: [
+        { playerId: 'rick', placement: 1, data: { targetIndex: 20 } },
+        { playerId: 'jaie', placement: null, data: { targetIndex: 12 } },
+      ],
+    })
+    sqlite.prepare('UPDATE games SET completed_at = ? WHERE id = ?')
+      .run('2026-09-01T20:00:00.000Z', 'game-1')
+
+    await startGame(database, {
+      id: 'game-2',
+      gameType: 'house-cricket',
+      options: {},
+      playerIds: ['jaie', 'rick'],
+    })
+    await completeGame(database, {
+      gameId: 'game-2',
+      winnerPlayerId: 'jaie',
+      results: [
+        { playerId: 'jaie', placement: 1, data: { showdownBulls: 1 } },
+        { playerId: 'rick', placement: 2, data: { showdownBulls: 0 } },
+      ],
+    })
+    sqlite.prepare('UPDATE games SET completed_at = ? WHERE id = ?')
+      .run('2026-09-02T20:00:00.000Z', 'game-2')
+
+    await startGame(database, {
+      id: 'game-3',
+      gameType: 'house-cricket',
+      options: {},
+      playerIds: ['rick', 'jaie'],
+    })
+    await abandonGame(database, 'game-3')
+
+    await expect(listCompletedGames(database)).resolves.toEqual([
+      {
+        id: 'game-2',
+        gameType: 'house-cricket',
+        options: {},
+        startedAt: expect.any(String),
+        completedAt: '2026-09-02T20:00:00.000Z',
+        participants: [
+          {
+            playerId: 'jaie',
+            playerName: 'Jaie',
+            turnOrder: 0,
+            isWinner: true,
+            placement: 1,
+            data: { showdownBulls: 1 },
+          },
+          {
+            playerId: 'rick',
+            playerName: 'Rick',
+            turnOrder: 1,
+            isWinner: false,
+            placement: 2,
+            data: { showdownBulls: 0 },
+          },
+        ],
+      },
+      {
+        id: 'game-1',
+        gameType: 'around-the-world',
+        options: { multiplierAdvance: true },
+        startedAt: expect.any(String),
+        completedAt: '2026-09-01T20:00:00.000Z',
+        participants: [
+          {
+            playerId: 'rick',
+            playerName: 'Rick',
+            turnOrder: 0,
+            isWinner: true,
+            placement: 1,
+            data: { targetIndex: 20 },
+          },
+          {
+            playerId: 'jaie',
+            playerName: 'Jaie',
+            turnOrder: 1,
+            isWinner: false,
+            placement: null,
+            data: { targetIndex: 12 },
+          },
+        ],
+      },
+    ])
   })
 })
