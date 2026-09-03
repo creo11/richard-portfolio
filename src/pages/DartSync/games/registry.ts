@@ -17,6 +17,22 @@ export const GAME_REGISTRY = {
         image: houseCricketImage,
         imageAlt: "Rick's House Rules dartboard artwork",
         engine: houseRulesEngine,
+        getPersistenceResult: (game) => {
+            if (game.phase !== "complete" || !game.winnerId) return null;
+
+            return {
+                winnerPlayerId: game.winnerId,
+                results: game.players.map((player) => ({
+                    playerId: player.playerId,
+                    placement: player.playerId === game.winnerId ? 1 : null,
+                    data: {
+                        marks: player.marks,
+                        isClosedOut: player.isClosedOut,
+                        showdownBulls: player.showdownBulls,
+                    },
+                })),
+            };
+        },
         ScoringView: Scoring,
         RulesView: HouseRulesRules,
     }),
@@ -28,6 +44,18 @@ export const GAME_REGISTRY = {
         image: aroundTheWorldImage,
         imageAlt: "Earth viewed from space",
         engine: aroundTheWorldEngine,
+        getPersistenceResult: (game) => {
+            if (game.phase !== "complete" || !game.winnerId) return null;
+
+            return {
+                winnerPlayerId: game.winnerId,
+                results: game.players.map((player) => ({
+                    playerId: player.playerId,
+                    placement: player.playerId === game.winnerId ? 1 : null,
+                    data: { targetIndex: player.targetIndex },
+                })),
+            };
+        },
         ScoringView: AroundTheWorldScoring,
         RulesView: AroundTheWorldRules,
         options: [

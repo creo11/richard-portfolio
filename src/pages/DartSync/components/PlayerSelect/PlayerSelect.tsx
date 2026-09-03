@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { requestTurnstileToken } from "../../turnstile";
 import type { Player } from "../../types/player";
 import "./PlayerSelect.less";
 
@@ -6,7 +7,11 @@ type PlayerSelectProps = {
   gameName: string;
   onBack: () => void;
   onManagePlayers: () => void;
-  onStartGame: (players: Player[], randomize: boolean) => void;
+  onStartGame: (
+    players: Player[],
+    randomize: boolean,
+    turnstileToken: string
+  ) => Promise<void>;
   selectedPlayerIds: string[];
   onSelectedPlayerIdsChange: (playerIds: string[]) => void;
   randomizeOrder: boolean;
@@ -35,6 +40,9 @@ export default function PlayerSelect({
   players,
 }: PlayerSelectProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [startError, setStartError] = useState("");
+  const [isStarting, setIsStarting] = useState(false);
+  const turnstileContainerRef = useRef<HTMLDivElement>(null);
 
   const selectedPlayers = useMemo(
     () =>
@@ -62,6 +70,34 @@ export default function PlayerSelect({
         ? selectedPlayerIds.filter((id) => id !== playerId)
         : [...selectedPlayerIds, playerId]
     );
+  };
+
+  const handleStartGame = async () => {
+    if (!turnstileContainerRef.current || selectedPlayers.length < 2) return;
+
+    setStartError("");
+    setIsStarting(true);
+
+    try {
+      const verification = await requestTurnstileToken(
+        turnstileContainerRef.current,
+        "game_start"
+      );
+
+      try {
+        await onStartGame(selectedPlayers, randomizeOrder, verification.token);
+      } finally {
+        verification.release();
+      }
+    } catch (error) {
+      setStartError(
+        error instanceof Error
+          ? error.message
+          : "DartSync could not start the game."
+      );
+    } finally {
+      setIsStarting(false);
+    }
   };
 
   return (
@@ -231,18 +267,30 @@ export default function PlayerSelect({
               <button
                 className="player-select__start"
                 type="button"
-                disabled={selectedPlayers.length < 2}
-                onClick={() => onStartGame(selectedPlayers, randomizeOrder)}
+                disabled={selectedPlayers.length < 2 || isStarting}
+                onClick={handleStartGame}
               >
-                Start game
+                {isStarting ? "Starting…" : "Start game"}
                 <svg viewBox="0 0 20 20" aria-hidden="true">
                   <path d="M4 10h11M11 6l4 4-4 4" />
                 </svg>
               </button>
             </div>
           </div>
+
+          {startError && (
+            <p className="player-select__start-error" role="alert">
+              {startError}
+            </p>
+          )}
         </div>
       </div>
+
+      <div
+        ref={turnstileContainerRef}
+        className="player-select__turnstile"
+        aria-live="polite"
+      />
     </div>
   );
 }

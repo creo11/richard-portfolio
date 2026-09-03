@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import GameSelect from "./components/GameSelect/GameSelect";
 import PlayerManagement from "./components/PlayerManagement/PlayerManagement";
@@ -6,6 +6,11 @@ import PlayerSelect from "./components/PlayerSelect/PlayerSelect";
 import { MOCK_PLAYERS } from "./data/mockPlayers";
 import { getGameRegistration } from "./games/registry";
 import type { DartboardTarget, GameSetupOptions } from "./games/types";
+import {
+    abandonPersistedGame,
+    completePersistedGame,
+    startPersistedGame,
+} from "./persistence/gameApi";
 import {
     createPlayer,
     deletePlayer,
@@ -15,6 +20,7 @@ import {
 } from "./persistence/playerApi";
 
 import type { Player } from "./types/player";
+import { requestTurnstileToken } from "./turnstile";
 
 import "./DartSync.less";
 
@@ -41,6 +47,9 @@ export default function DartSync() {
     const [step, setStep] = useState<DartSyncStep>("game-select");
     const [gamePlayers, setGamePlayers] = useState<Player[]>([]);
     const [game, setGame] = useState<unknown | null>(null);
+    const persistedGameIdRef = useRef<string | null>(null);
+    const completionAttemptsRef = useRef(new Set<string>());
+    const lifecycleTurnstileRef = useRef<HTMLDivElement>(null);
     const [scoreHistory, setScoreHistory] = useState<unknown[]>([]);
     const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
     const [randomizeOrder, setRandomizeOrder] = useState(true);
@@ -50,6 +59,10 @@ export default function DartSync() {
     const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
     const [selectedGameOptions, setSelectedGameOptions] =
         useState<GameSetupOptions>({});
+    const [resultPersistenceStatus, setResultPersistenceStatus] =
+        useState<"idle" | "saving" | "saved" | "error">("idle");
+    const [resultPersistenceError, setResultPersistenceError] = useState("");
+    const [resultPersistenceRetry, setResultPersistenceRetry] = useState(0);
 
     useEffect(() => {
         const existingFavicon = document.querySelector(
@@ -87,6 +100,66 @@ export default function DartSync() {
     }, []);
 
     useEffect(() => {
+        const persistedGameId = persistedGameIdRef.current;
+        const registration = selectedGameId
+            ? getGameRegistration(selectedGameId)
+            : undefined;
+        const persistenceResult = registration && game
+            ? registration.getPersistenceResult(game)
+            : null;
+
+        if (
+            !persistedGameId
+            || !persistenceResult
+            || !lifecycleTurnstileRef.current
+            || completionAttemptsRef.current.has(persistedGameId)
+        ) {
+            return;
+        }
+
+        completionAttemptsRef.current.add(persistedGameId);
+        setResultPersistenceStatus("saving");
+        setResultPersistenceError("");
+
+        const saveResult = async () => {
+            let releaseVerification = () => {};
+
+            try {
+                const verification = await requestTurnstileToken(
+                    lifecycleTurnstileRef.current!,
+                    "game_complete"
+                );
+                releaseVerification = verification.release;
+                await completePersistedGame(
+                    persistedGameId,
+                    persistenceResult.winnerPlayerId,
+                    persistenceResult.results,
+                    verification.token
+                );
+                setResultPersistenceStatus("saved");
+
+                try {
+                    setPlayers(await loadPlayers());
+                } catch {
+                    // The saved result remains valid if refreshing summary stats fails.
+                }
+            } catch (error) {
+                completionAttemptsRef.current.delete(persistedGameId);
+                setResultPersistenceStatus("error");
+                setResultPersistenceError(
+                    error instanceof Error
+                        ? error.message
+                        : "DartSync could not save the game result."
+                );
+            } finally {
+                releaseVerification();
+            }
+        };
+
+        void saveResult();
+    }, [game, selectedGameId, resultPersistenceRetry]);
+
+    useEffect(() => {
         const controller = new AbortController();
 
         loadPlayers(controller.signal)
@@ -115,16 +188,14 @@ export default function DartSync() {
         setStep("player-select");
     };
 
-    const handleStartGame = (
+    const handleStartGame = async (
         players: Player[],
-        randomizeOrder: boolean
+        randomizeOrder: boolean,
+        turnstileToken: string
     ) => {
-        setScoreHistory([]);
         const orderedPlayers = randomizeOrder
             ? shufflePlayers(players)
             : players;
-
-        setGamePlayers(orderedPlayers);
 
         const gameRegistration = selectedGameId
             ? getGameRegistration(selectedGameId)
@@ -136,6 +207,18 @@ export default function DartSync() {
             orderedPlayers,
             selectedGameOptions
         );
+        const persistedGame = await startPersistedGame(
+            gameRegistration.id,
+            selectedGameOptions,
+            orderedPlayers.map(({ id }) => id),
+            turnstileToken
+        );
+
+        setScoreHistory([]);
+        setGamePlayers(orderedPlayers);
+        persistedGameIdRef.current = persistedGame.id;
+        setResultPersistenceStatus("idle");
+        setResultPersistenceError("");
         setGame(newGame);
 
         setStep("scoring");
@@ -193,15 +276,66 @@ export default function DartSync() {
         setScoreHistory((history) => history.slice(0, -1));
     };
 
-    const handleEndGame = () => {
+    const resetGame = () => {
         setScoreHistory([]);
         setGame(null);
+        persistedGameIdRef.current = null;
         setGamePlayers([]);
         setSelectedPlayerIds([]);
         setRandomizeOrder(true);
         setSelectedGameId(null);
         setSelectedGameOptions({});
+        setResultPersistenceStatus("idle");
+        setResultPersistenceError("");
         setStep("game-select");
+    };
+
+    const handleEndGame = async () => {
+        const persistedGameId = persistedGameIdRef.current;
+        const registration = selectedGameId
+            ? getGameRegistration(selectedGameId)
+            : undefined;
+        const persistenceResult = registration && game
+            ? registration.getPersistenceResult(game)
+            : null;
+
+        if (!persistedGameId) {
+            resetGame();
+            return;
+        }
+
+        if (persistenceResult) {
+            if (resultPersistenceStatus === "saved") resetGame();
+            return;
+        }
+
+        if (!lifecycleTurnstileRef.current) return;
+
+        setResultPersistenceStatus("saving");
+        setResultPersistenceError("");
+        let releaseVerification = () => {};
+
+        try {
+            const verification = await requestTurnstileToken(
+                lifecycleTurnstileRef.current,
+                "game_abandon"
+            );
+            releaseVerification = verification.release;
+            await abandonPersistedGame(
+                persistedGameId,
+                verification.token
+            );
+            resetGame();
+        } catch (error) {
+            setResultPersistenceStatus("error");
+            setResultPersistenceError(
+                error instanceof Error
+                    ? error.message
+                    : "DartSync could not end the game."
+            );
+        } finally {
+            releaseVerification();
+        }
     };
 
     const handleBackToGames = () => {
@@ -299,8 +433,19 @@ export default function DartSync() {
                     onNextPlayer={handleNextPlayer}
                     onEndGame={handleEndGame}
                     onUndo={handleUndo}
-                    canUndo={scoreHistory.length > 0} />
+                    canUndo={scoreHistory.length > 0}
+                    resultPersistenceStatus={resultPersistenceStatus}
+                    resultPersistenceError={resultPersistenceError}
+                    onRetryResultPersistence={() =>
+                        setResultPersistenceRetry((retry) => retry + 1)
+                    } />
             )}
+
+            <div
+                ref={lifecycleTurnstileRef}
+                className="dartsync-app__turnstile"
+                aria-live="polite"
+            />
         </div>
     );
 }

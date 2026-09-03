@@ -164,6 +164,13 @@
             font-weight: 750;
             cursor: pointer;
 
+            &:disabled {
+                border-color: #353848;
+                background: #2a2c39;
+                color: #777c8e;
+                cursor: wait;
+            }
+
             &:hover {
                 background: #52c7e2;
             }
@@ -181,6 +188,24 @@
         text-transform: uppercase;
         letter-spacing: 0.12em;
         color: var(--dartsync-accent);
+    }
+
+    &__winner-error,
+    &__persistence-error {
+        color: #ff9aa8 !important;
+    }
+
+    &__persistence-error {
+        position: fixed;
+        z-index: 950;
+        top: 16px;
+        left: 50%;
+        margin: 0;
+        padding: 10px 14px;
+        border: 1px solid rgba(255, 109, 127, 0.35);
+        border-radius: 8px;
+        background: #25151b;
+        transform: translateX(-50%);
     }
 
     &__modal-overlay {

@@ -31,6 +31,9 @@ export default function Scoring({
     onEndGame,
     onUndo,
     canUndo,
+    resultPersistenceStatus,
+    resultPersistenceError,
+    onRetryResultPersistence,
 }: ScoringProps) {
     const [showEndGameModal, setShowEndGameModal] = useState(false);
     const activeGamePlayer = game.players[game.activePlayerIndex];
@@ -70,6 +73,11 @@ export default function Scoring({
 
     return (
         <div className="scoring">
+            {game.phase !== "complete" && resultPersistenceStatus === "error" && (
+                <p className="scoring__persistence-error" role="alert">
+                    {resultPersistenceError}
+                </p>
+            )}
             {showEndGameModal && (
                 <div
                     className="scoring__modal-overlay"
@@ -105,6 +113,7 @@ export default function Scoring({
                             <button
                                 type="button"
                                 className="scoring__modal-confirm"
+                                disabled={resultPersistenceStatus === "saving"}
                                 onClick={() => {
                                     setShowEndGameModal(false);
                                     onEndGame();
@@ -128,12 +137,29 @@ export default function Scoring({
 
                         <p>Rick's House Rules Cricket Champion</p>
 
+                        {resultPersistenceStatus === "error" && (
+                            <p className="scoring__winner-error" role="alert">
+                                {resultPersistenceError}
+                            </p>
+                        )}
+
                         <button
                             type="button"
                             onClick={onEndGame}
+                            disabled={resultPersistenceStatus !== "saved"}
                         >
-                            Finish Game
+                            {resultPersistenceStatus === "saved"
+                                ? "Finish Game"
+                                : resultPersistenceStatus === "error"
+                                    ? "Result not saved"
+                                    : "Saving result…"}
                         </button>
+
+                        {resultPersistenceStatus === "error" && (
+                            <button type="button" onClick={onRetryResultPersistence}>
+                                Retry saving
+                            </button>
+                        )}
                     </div>
                 </div>
             )}
@@ -325,6 +351,7 @@ export default function Scoring({
                             <button
                                 type="button"
                                 className="scoring__end-game"
+                                disabled={resultPersistenceStatus === "saving"}
                                 onClick={() => setShowEndGameModal(true)}
                             >
                                 End Game

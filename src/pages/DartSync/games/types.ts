@@ -4,6 +4,15 @@ import type { Player } from "../types/player";
 export type DartboardTarget = number | "bull";
 export type GameSetupOptions = Record<string, boolean>;
 
+export type GamePersistenceResult = {
+    winnerPlayerId: string;
+    results: Array<{
+        playerId: string;
+        placement: number | null;
+        data: Record<string, unknown>;
+    }>;
+};
+
 export type ScoreResult<TGame, TAction> = {
     game: TGame;
     action?: TAction;
@@ -28,6 +37,9 @@ export type GameScoringViewProps<TGame, TTarget> = {
     onEndGame: () => void;
     onUndo: () => void;
     canUndo: boolean;
+    resultPersistenceStatus: "idle" | "saving" | "saved" | "error";
+    resultPersistenceError: string;
+    onRetryResultPersistence: () => void;
 };
 
 export type GameRulesViewProps = {
@@ -48,6 +60,7 @@ export type GameDefinition<TGame, TTarget, TAction, TOptions> = {
     image: string;
     imageAlt: string;
     engine: GameEngine<TGame, TTarget, TAction, TOptions>;
+    getPersistenceResult: (game: TGame) => GamePersistenceResult | null;
     ScoringView: ComponentType<GameScoringViewProps<TGame, TTarget>>;
     RulesView: ComponentType<GameRulesViewProps>;
     options?: GameOptionDefinition[];
@@ -60,6 +73,7 @@ export type RegisteredGame = {
     image: string;
     imageAlt: string;
     engine: GameEngine<unknown, DartboardTarget, unknown, GameSetupOptions>;
+    getPersistenceResult: (game: unknown) => GamePersistenceResult | null;
     ScoringView: ComponentType<GameScoringViewProps<unknown, DartboardTarget>>;
     RulesView: ComponentType<GameRulesViewProps>;
     options: GameOptionDefinition[];
@@ -87,6 +101,8 @@ export function defineGame<
             undo: (game, action) =>
                 definition.engine.undo(game as TGame, action as TAction),
         },
+        getPersistenceResult: (game) =>
+            definition.getPersistenceResult(game as TGame),
         ScoringView: definition.ScoringView as ComponentType<
             GameScoringViewProps<unknown, DartboardTarget>
         >,

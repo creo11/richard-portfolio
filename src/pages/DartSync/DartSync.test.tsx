@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -18,6 +18,24 @@ beforeEach(() => {
   };
 
   vi.stubGlobal("fetch", vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+    if (
+      init?.method === "POST"
+      && (String(_input).endsWith("/complete") || String(_input).endsWith("/abandon"))
+    ) {
+      return new Response(null, { status: 204 });
+    }
+
+    if (init?.method === "POST" && String(_input) === "/api/dartsync/games") {
+      return Response.json({
+        game: {
+          id: "game-test",
+          gameType: "house-cricket",
+          options: {},
+          participants: [],
+        },
+      }, { status: 201 });
+    }
+
     if (init?.method === "DELETE") {
       return new Response(null, { status: 204 });
     }
@@ -188,6 +206,32 @@ describe("DartSync scoring flow", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Triple 2" })
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not offer a triple when Bull is the Around the World target", async () => {
+    const user = userEvent.setup();
+
+    render(<DartSync />);
+
+    await user.click(getGameAction("Around the World", "Select Game"));
+    await user.click(screen.getByRole("button", { name: /Rick/ }));
+    await user.click(screen.getByRole("button", { name: /Jaie/ }));
+    await user.click(
+      screen.getByRole("checkbox", { name: /Randomize order/ })
+    );
+    await user.click(screen.getByRole("button", { name: "Start game" }));
+
+    for (const target of [1, 4, 7, 10, 13, 16, 19]) {
+      await user.click(
+        screen.getByRole("button", { name: `Triple ${target}` })
+      );
+    }
+
+    expect(screen.getByRole("button", { name: "Single Bull" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Double Bull" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Triple Bull" })
     ).not.toBeInTheDocument();
   });
 
@@ -588,6 +632,33 @@ describe("DartSync scoring flow", () => {
     expect(
       screen.getByRole("button", { name: "Finish Game" })
     ).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/dartsync/games/game-test/complete",
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({
+            "X-Turnstile-Token": "test-turnstile-token",
+          }),
+        })
+      );
+    });
+
+    const completionCall = vi.mocked(fetch).mock.calls.find(([input]) =>
+      String(input).endsWith("/complete")
+    );
+    const completionBody = JSON.parse(String(completionCall?.[1]?.body)) as {
+      winnerPlayerId: string;
+      results: Array<{ playerId: string; data: Record<string, unknown> }>;
+    };
+    expect(completionBody.winnerPlayerId).toBe(MOCK_PLAYERS[0].id);
+    expect(completionBody.results).toHaveLength(2);
+    expect(completionBody.results[0]?.data).toEqual(expect.objectContaining({
+      marks: expect.any(Object),
+      isClosedOut: true,
+      showdownBulls: 0,
+    }));
   });
 
   it("starts a tied Bullseye Showdown after a successful comeback", async () => {
@@ -1102,6 +1173,16 @@ describe("DartSync scoring flow", () => {
     expect(
       getGameAction("Rick's House Rules Cricket", "Select Game")
     ).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/dartsync/games/game-test/abandon",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "X-Turnstile-Token": "test-turnstile-token",
+        },
+      }
+    );
   });
 
   it("rotates through three players and wraps to the first player", async () => {
@@ -1200,5 +1281,28 @@ describe("DartSync scoring flow", () => {
       "aria-pressed",
       "true"
     );
+  });
+
+  it("stays on player selection when the game cannot be persisted", async () => {
+    const user = userEvent.setup();
+
+    render(<DartSync />);
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
+    await screen.findByRole("button", { name: /Rick/ });
+    await user.click(screen.getByRole("button", { name: /Rick/ }));
+    await user.click(screen.getByRole("button", { name: /Jaie/ }));
+
+    vi.mocked(fetch).mockResolvedValue(Response.json(
+      { error: "DartSync could not save this game." },
+      { status: 500 }
+    ));
+
+    await user.click(screen.getByRole("button", { name: "Start game" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "DartSync could not save this game."
+    );
+    expect(screen.getByRole("button", { name: "Start game" })).toBeEnabled();
+    expect(screen.getByRole("heading", { name: "Select players" })).toBeInTheDocument();
   });
 });

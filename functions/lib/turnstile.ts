@@ -3,6 +3,9 @@ export type TurnstileAction =
   | 'player_update'
   | 'player_reset'
   | 'player_delete'
+  | 'game_start'
+  | 'game_complete'
+  | 'game_abandon'
 
 type TurnstileResult = {
   success?: unknown

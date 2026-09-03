@@ -26,6 +26,9 @@ export default function AroundTheWorldScoring({
   onEndGame,
   onUndo,
   canUndo,
+  resultPersistenceStatus,
+  resultPersistenceError,
+  onRetryResultPersistence,
 }: AroundTheWorldScoringProps) {
   const [showEndGameModal, setShowEndGameModal] = useState(false);
   const activeGamePlayer = game.players[game.activePlayerIndex];
@@ -45,6 +48,11 @@ export default function AroundTheWorldScoring({
 
   return (
     <div className="scoring around-world">
+      {game.phase !== "complete" && resultPersistenceStatus === "error" && (
+        <p className="scoring__persistence-error" role="alert">
+          {resultPersistenceError}
+        </p>
+      )}
       {showEndGameModal && (
         <div
           className="scoring__modal-overlay"
@@ -77,7 +85,11 @@ export default function AroundTheWorldScoring({
               <button
                 type="button"
                 className="scoring__modal-confirm"
-                onClick={onEndGame}
+                disabled={resultPersistenceStatus === "saving"}
+                onClick={() => {
+                  setShowEndGameModal(false);
+                  onEndGame();
+                }}
               >
                 End Game
               </button>
@@ -92,7 +104,27 @@ export default function AroundTheWorldScoring({
             <span className="scoring__winner-label">Winner</span>
             <h1>{winner.name}</h1>
             <p>Around the World Champion</p>
-            <button type="button" onClick={onEndGame}>Finish Game</button>
+            {resultPersistenceStatus === "error" && (
+              <p className="scoring__winner-error" role="alert">
+                {resultPersistenceError}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={onEndGame}
+              disabled={resultPersistenceStatus !== "saved"}
+            >
+              {resultPersistenceStatus === "saved"
+                ? "Finish Game"
+                : resultPersistenceStatus === "error"
+                  ? "Result not saved"
+                  : "Saving result…"}
+            </button>
+            {resultPersistenceStatus === "error" && (
+              <button type="button" onClick={onRetryResultPersistence}>
+                Retry saving
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -139,9 +171,11 @@ export default function AroundTheWorldScoring({
                 <button type="button" onClick={() => onScoreTarget(currentTarget, 2)}>
                   Double {displayTarget(currentTarget)}
                 </button>
-                <button type="button" onClick={() => onScoreTarget(currentTarget, 3)}>
-                  Triple {displayTarget(currentTarget)}
-                </button>
+                {currentTarget !== "bull" && (
+                  <button type="button" onClick={() => onScoreTarget(currentTarget, 3)}>
+                    Triple {displayTarget(currentTarget)}
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -189,6 +223,7 @@ export default function AroundTheWorldScoring({
               <button
                 type="button"
                 className="scoring__end-game"
+                disabled={resultPersistenceStatus === "saving"}
                 onClick={() => setShowEndGameModal(true)}
               >
                 End Game
