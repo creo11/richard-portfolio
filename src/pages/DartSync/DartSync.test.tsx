@@ -18,6 +18,37 @@ beforeEach(() => {
   };
 
   vi.stubGlobal("fetch", vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+    if (!init?.method && String(_input) === "/api/dartsync/statistics") {
+      return Response.json({
+        players: [
+          {
+            playerId: "rick",
+            playerName: "Rick",
+            gamesPlayed: 4,
+            wins: 3,
+            losses: 1,
+            winPercentage: 75,
+            byGameType: [{
+              gameType: "around-the-world",
+              gamesPlayed: 2,
+              wins: 1,
+              losses: 1,
+              winPercentage: 50,
+            }],
+          },
+          {
+            playerId: "jaie",
+            playerName: "Jaie",
+            gamesPlayed: 0,
+            wins: 0,
+            losses: 0,
+            winPercentage: 0,
+            byGameType: [],
+          },
+        ],
+      });
+    }
+
     if (!init?.method && String(_input) === "/api/dartsync/games") {
       return Response.json({
         games: [{
@@ -122,6 +153,39 @@ function getGameAction(gameName: string, actionName: string) {
 }
 
 describe("DartSync scoring flow", () => {
+  it("opens player statistics and returns to the game lobby", async () => {
+    const user = userEvent.setup();
+
+    render(<DartSync />);
+
+    await user.click(screen.getByRole("button", { name: "Statistics" }));
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Player statistics" })
+    ).toBeInTheDocument();
+    const statistics = screen.getByLabelText("2 player statistics");
+    expect(within(statistics).getByRole("heading", { name: "Rick" }))
+      .toBeInTheDocument();
+    expect(within(statistics).getByText("75% lifetime win rate"))
+      .toBeInTheDocument();
+    expect(within(statistics).getByText("1W · 1L"))
+      .toBeInTheDocument();
+    expect(within(statistics).getByText("No completed games"))
+      .toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledWith("/api/dartsync/statistics", {
+      headers: {
+        Accept: "application/json",
+        "X-Turnstile-Token": "test-turnstile-token",
+      },
+      signal: expect.any(AbortSignal),
+    });
+
+    await user.click(screen.getByRole("button", { name: "Back to games" }));
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Select a game" })
+    ).toBeInTheDocument();
+  });
+
   it("opens completed game history and returns to the game lobby", async () => {
     const user = userEvent.setup();
 

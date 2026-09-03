@@ -7,6 +7,7 @@ import "./GameSelect.less";
 type GameSelectProps = {
   onSelectGame: (gameId: string, options: GameSetupOptions) => void;
   onViewHistory: () => void;
+  onViewStatistics: () => void;
 };
 
 function createDefaultOptions() {
@@ -20,7 +21,11 @@ function createDefaultOptions() {
   ) as Record<string, GameSetupOptions>;
 }
 
-export default function GameSelect({ onSelectGame, onViewHistory }: GameSelectProps) {
+export default function GameSelect({
+  onSelectGame,
+  onViewHistory,
+  onViewStatistics,
+}: GameSelectProps) {
   const [rulesGameId, setRulesGameId] = useState<string | null>(null);
   const [gameOptions, setGameOptions] = useState(createDefaultOptions);
   const rulesRegistration = rulesGameId
@@ -37,9 +42,14 @@ export default function GameSelect({ onSelectGame, onViewHistory }: GameSelectPr
               <img src="/dartsync/favicon.svg" alt="" />
             </span>
             <span>DartSync</span>
-            <button type="button" className="game-select__history" onClick={onViewHistory}>
-              Game History
-            </button>
+            <div className="game-select__nav">
+              <button type="button" className="game-select__history" onClick={onViewHistory}>
+                Game History
+              </button>
+              <button type="button" className="game-select__statistics" onClick={onViewStatistics}>
+                Statistics
+              </button>
+            </div>
           </div>
 
           <div className="game-select__intro">

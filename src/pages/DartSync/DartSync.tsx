@@ -4,6 +4,7 @@ import GameSelect from "./components/GameSelect/GameSelect";
 import GameHistory from "./components/GameHistory/GameHistory";
 import PlayerManagement from "./components/PlayerManagement/PlayerManagement";
 import PlayerSelect from "./components/PlayerSelect/PlayerSelect";
+import PlayerStatistics from "./components/PlayerStatistics/PlayerStatistics";
 import { MOCK_PLAYERS } from "./data/mockPlayers";
 import { getGameRegistration } from "./games/registry";
 import type { DartboardTarget, GameSetupOptions } from "./games/types";
@@ -30,6 +31,7 @@ import "./DartSync.less";
 type DartSyncStep =
     | "game-select"
     | "game-history"
+    | "player-statistics"
     | "player-management"
     | "player-select"
     | "scoring";
@@ -402,11 +404,16 @@ export default function DartSync() {
                 <GameSelect
                     onSelectGame={handleGameSelect}
                     onViewHistory={() => setStep("game-history")}
+                    onViewStatistics={() => setStep("player-statistics")}
                 />
             )}
 
             {step === "game-history" && (
                 <GameHistory onBack={() => setStep("game-select")} />
+            )}
+
+            {step === "player-statistics" && (
+                <PlayerStatistics onBack={() => setStep("game-select")} />
             )}
 
             {step === "player-management" && (
