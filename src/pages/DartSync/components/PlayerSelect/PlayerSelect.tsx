@@ -1,12 +1,18 @@
 import { useMemo, useRef, useState } from "react";
 import { requestTurnstileToken } from "../../turnstile";
 import type { Player } from "../../types/player";
+import QuickAddPlayerModal from "./QuickAddPlayerModal";
 import "./PlayerSelect.less";
 
 type PlayerSelectProps = {
   gameName: string;
   onBack: () => void;
   onManagePlayers: () => void;
+  onCreatePlayer: (
+    name: string,
+    description: string | undefined,
+    turnstileToken: string
+  ) => Promise<void>;
   onStartGame: (
     players: Player[],
     randomize: boolean,
@@ -32,6 +38,7 @@ export default function PlayerSelect({
   gameName,
   onBack,
   onManagePlayers,
+  onCreatePlayer,
   onStartGame,
   selectedPlayerIds,
   onSelectedPlayerIdsChange,
@@ -42,6 +49,7 @@ export default function PlayerSelect({
   const [searchQuery, setSearchQuery] = useState("");
   const [startError, setStartError] = useState("");
   const [isStarting, setIsStarting] = useState(false);
+  const [isAddingPlayer, setIsAddingPlayer] = useState(false);
   const turnstileContainerRef = useRef<HTMLDivElement>(null);
 
   const selectedPlayers = useMemo(
@@ -140,31 +148,42 @@ export default function PlayerSelect({
 
       <div className="player-select__body">
         <div className="player-select__body-inner">
-          <div className="player-select__search">
-            <svg viewBox="0 0 20 20" aria-hidden="true">
-              <circle cx="9" cy="9" r="5.5" />
-              <path d="m13 13 3.5 3.5" />
-            </svg>
+          <div className="player-select__search-row">
+            <div className="player-select__search">
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <circle cx="9" cy="9" r="5.5" />
+                <path d="m13 13 3.5 3.5" />
+              </svg>
 
-            <input
-              type="search"
-              value={searchQuery}
-              placeholder="Search players"
-              aria-label="Search players"
-              onChange={(event) => setSearchQuery(event.target.value)}
-            />
+              <input
+                type="search"
+                value={searchQuery}
+                placeholder="Search players"
+                aria-label="Search players"
+                onChange={(event) => setSearchQuery(event.target.value)}
+              />
 
-            {searchQuery && (
-              <button
-                type="button"
-                aria-label="Clear player search"
-                onClick={() => setSearchQuery("")}
-              >
-                <svg viewBox="0 0 20 20" aria-hidden="true">
-                  <path d="M6 6l8 8M14 6l-8 8" />
-                </svg>
-              </button>
-            )}
+              {searchQuery && (
+                <button
+                  type="button"
+                  aria-label="Clear player search"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <svg viewBox="0 0 20 20" aria-hidden="true">
+                    <path d="M6 6l8 8M14 6l-8 8" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            <button
+              className="player-select__add"
+              type="button"
+              onClick={() => setIsAddingPlayer(true)}
+            >
+              Add Player
+              <span aria-hidden="true">+</span>
+            </button>
           </div>
 
           <div className="player-select__grid">
@@ -291,6 +310,17 @@ export default function PlayerSelect({
         className="player-select__turnstile"
         aria-live="polite"
       />
+
+      {isAddingPlayer && (
+        <QuickAddPlayerModal
+          players={players}
+          onClose={() => setIsAddingPlayer(false)}
+          onCreatePlayer={async (...args) => {
+            await onCreatePlayer(...args);
+            setSearchQuery("");
+          }}
+        />
+      )}
     </div>
   );
 }

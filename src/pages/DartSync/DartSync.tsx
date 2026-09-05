@@ -446,6 +446,7 @@ export default function DartSync() {
                     gameName={selectedGameRegistration?.name ?? "DartSync"}
                     onBack={handleBackToGames}
                     onManagePlayers={() => setStep("player-management")}
+                    onCreatePlayer={handleCreatePlayer}
                     onStartGame={handleStartGame}
                     selectedPlayerIds={selectedPlayerIds}
                     onSelectedPlayerIdsChange={setSelectedPlayerIds}

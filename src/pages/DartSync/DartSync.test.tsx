@@ -511,6 +511,46 @@ describe("DartSync scoring flow", () => {
     ).not.toBeChecked();
   });
 
+  it("creates a player directly from player selection", async () => {
+    const user = userEvent.setup();
+
+    render(<DartSync />);
+
+    await user.click(getGameAction("Rick's House Rules Cricket", "Select Game"));
+    const search = screen.getByRole("searchbox", { name: "Search players" });
+    await user.type(search, "No existing match");
+    await user.click(screen.getByRole("button", { name: "Add Player" }));
+
+    const dialog = screen.getByRole("dialog", { name: "Add a new player" });
+    await user.type(within(dialog).getByRole("textbox", { name: "Player name" }), "Casey");
+    await user.type(
+      within(dialog).getByRole("textbox", { name: /Description/ }),
+      "Steady finisher"
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Create player" }));
+
+    expect(await screen.findByRole("button", { name: /Casey/ }))
+      .toHaveAttribute("aria-pressed", "false");
+    expect(search).toHaveValue("");
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/dartsync/players",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          "X-Turnstile-Token": "test-turnstile-token",
+        }),
+      })
+    );
+    expect(window.turnstile?.render).toHaveBeenCalledWith(
+      expect.any(HTMLElement),
+      expect.objectContaining({ action: "player_create" })
+    );
+
+    await user.click(screen.getByRole("button", { name: /Casey/ }));
+    expect(screen.getByRole("button", { name: /Casey/ }))
+      .toHaveAttribute("aria-pressed", "true");
+  });
+
   it("validates, persists, and cancels new players", async () => {
     const user = userEvent.setup();
 
